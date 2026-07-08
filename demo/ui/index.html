@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Clinician Mockups - Adaptive Alert Delivery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f4f6f8;--panel:#fff;--ink:#28323b;--muted:#69757f;--line:#dbe1e7;--blue:#2c6fb3;--blue-d:#1b4f82}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.55 "Work Sans","Avenir Next",ui-sans-serif,-apple-system,Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+  .mockup-banner{background:#222;color:#fff;text-align:center;padding:6px;font-size:12px}
+  .mockup-banner b{color:#ffd24a}
+  .wrap{max-width:820px;margin:30px auto;padding:0 18px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--muted);margin-bottom:22px}
+  a.card{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);
+         border-radius:12px;padding:18px;margin-bottom:14px;transition:border-color .15s,box-shadow .15s}
+  a.card:hover{border-color:var(--blue);box-shadow:0 6px 20px rgba(20,40,70,.08)}
+  .card .stage{font-size:11.5px;font-weight:700;color:var(--blue-d);letter-spacing:.04em}
+  .card h2{margin:4px 0 6px;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:13.5px}
+  .footer{color:var(--muted);font-size:12px;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="mockup-banner"><b>MOCKUP</b> &nbsp;Illustrative only, not real systems. For showing what the project could look like.</div>
+<div class="wrap">
+  <h1>Clinician touchpoints</h1>
+  <div class="sub">Where clinicians interact with the adaptive alert-delivery project. Start with the full pipeline, or open an individual touchpoint.</div>
+
+  <a class="card" href="pipeline.html" style="border-color:#2c6fb3;background:#f7fafd">
+    <div class="stage">▶ START HERE · FULL PIPELINE</div>
+    <h2>End-to-end pipeline demo</h2>
+    <p>One patient walked through all five Methods stages in seven interactive tabs: case → gatekeeper → generation → compare → scoring → delivery → adaptive policy.</p>
+  </a>
+
+  <a class="card" href="recommendation_review.html">
+    <div class="stage">STAGE 02 - GENERATION</div>
+    <h2>Recommendation review</h2>
+    <p>A clinician vets and edits the multi-agent candidate test list (the Quadruple-Aim panel) before it is scored.</p>
+  </a>
+
+  <a class="card" href="annotation_console.html">
+    <div class="stage">STAGES 03 + 06 - SCORING &amp; JUDGE</div>
+    <h2>Expert review console</h2>
+    <p>A physician panel rates appropriateness (RAND/UCLA 1-9) and grades diagnoses (Judge 1-5), calibrating the automated scorers.</p>
+  </a>
+
+  <a class="card" href="clinician_ui.html">
+    <div class="stage">STAGE 04 - DELIVERY</div>
+    <h2>In-workflow alert delivery</h2>
+    <p>The live experience: an alert delivered via one of five actions, with accept/dismiss and an alert-fatigue meter.</p>
+  </a>
+
+  <div class="footer">Serve locally: from <code>demo/ui/</code> run <code>python3 -m http.server</code>, then open the printed URL.</div>
+</div>
+</body>
+</html>

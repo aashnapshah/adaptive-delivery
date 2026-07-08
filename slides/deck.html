@@ -1,0 +1,67 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+:root{--font:'Avenir Next','Avenir',system-ui,sans-serif;--ink:#1A1A1A;--body:#28323B;--muted:#69757F;
+      --line:#E4DFD8;--accent:#4E6E8E;--good:#4E8A5B;--harm:#B03A3A;}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--font);color:var(--body);background:#fff;-webkit-font-smoothing:antialiased}
+.slide{width:1280px;height:720px;background:#fff;padding:70px 84px;display:flex;flex-direction:column;
+       position:relative;overflow:hidden;page-break-after:always}
+.kicker{font-size:15px;color:var(--muted);font-weight:600;letter-spacing:.04em;margin-bottom:12px;
+        text-transform:uppercase}
+h2.title{font-size:40px;line-height:1.12;color:var(--ink);font-weight:600;letter-spacing:-.01em;max-width:22ch}
+ul.pts{list-style:none;padding:0;margin:34px 0 0;max-width:62ch}
+ul.pts li{font-size:23px;line-height:1.5;color:var(--body);margin:0 0 18px;padding-left:30px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:12px;width:9px;height:9px;border-radius:50%;
+                  background:var(--accent)}
+ul.pts li b{color:var(--ink);font-weight:600}
+.figwrap{margin-top:auto;margin-bottom:auto;display:flex;align-items:center;justify-content:center}
+.figwrap img{max-width:100%;max-height:440px;display:block}
+.foot{position:absolute;left:84px;bottom:34px;font-size:14px;color:var(--muted)}
+.big{margin:auto 0}
+.big h1{font-size:50px;line-height:1.12;color:var(--ink);font-weight:600;letter-spacing:-.015em;max-width:24ch}
+.big .by{font-size:20px;color:var(--muted);margin-top:22px}
+.tag{display:inline-block;font-size:15px;color:var(--accent);font-weight:600;letter-spacing:.03em;
+     text-transform:uppercase;margin-bottom:18px}
+.res{font-size:26px;color:var(--muted);margin-top:26px;max-width:60ch;line-height:1.5}
+.res b{color:var(--ink);font-weight:600}
+table{border-collapse:separate;border-spacing:0;margin-top:30px;font-size:19px;border:1px solid var(--line);
+      border-radius:12px;overflow:hidden}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;
+   padding:12px 18px;background:#faf9f7;border-bottom:1px solid var(--line)}
+td{padding:12px 18px;border-bottom:1px solid #F1EDE8;color:var(--body)}
+tr:last-child td{border-bottom:0}
+td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+ @page{size:1280px 720px;margin:0}</style></head><body><div class="slide"><div class="big"><div class="tag">Progress report · 2026</div>
+    <h1>Adaptive Delivery of LLM-Generated Diagnostic Test Recommendations</h1>
+    <div class="by">Aashna Shah</div></div>
+    <div class="foot">Reproducing &amp; extending Nori et al. (2025) · SDBench + MAI-DxO</div></div><div class="slide"><div class="kicker">The problem</div>
+    <h2 class="title">The constraint is delivery, not diagnosis</h2>
+    <ul class="pts">
+      <li>LLMs already match or exceed physicians on diagnostic reasoning</li>
+      <li><b>Goh 2024 (RCT):</b> the model alone beat physicians — but physicians <i>given</i> the model did not improve</li>
+      <li>Indiscriminate alerts &rarr; alert fatigue &rarr; overrides. A great recommendation, poorly delivered, captures little value</li>
+    </ul>
+    <div class="foot">Adaptive Alert Delivery</div></div><div class="slide"><div class="kicker">The question</div>
+    <h2 class="title">Does more orchestration actually help?</h2>
+    <div class="figwrap"><img src="../reports/figures/schematic_recommenders.png" /></div>
+    <div class="foot">Same five MAI-DxO roles throughout — only the orchestration changes</div></div><div class="slide"><div class="kicker">The harness</div>
+    <h2 class="title">Each case is worked step by step through a gatekeeper</h2>
+    <div class="figwrap"><img src="../reports/figures/example_transcript.png" style="max-height:470px" /></div>
+    <div class="foot">The agent sees only the presentation; the Judge grades against the withheld truth</div></div><div class="slide"><div class="tag" style="color:#B03A3A">Key result</div>
+    <h2 class="title">More orchestration does not buy accuracy</h2>
+    <div class="figwrap"><img src="../reports/figures/results_dashboard.png" style="max-height:430px" /></div>
+    <div class="foot">Llama-3.1-8B · full 100-case CPC run</div></div><div class="slide"><div class="kicker">The cost of complexity</div>
+    <h2 class="title">And the multi-agent panel costs far more</h2>
+    <div class="figwrap"><img src="../reports/figures/cpc_cost.png" style="max-height:330px" /></div>
+    <div class="res">The complex panel spends <b>~1.9× the tokens</b> and <b>~4.3× the wall-clock time</b> of a single call — for lower accuracy.</div>
+    <div class="foot">Robust across every checkpoint, n = 10 &rarr; 100</div></div><div class="slide"><div class="kicker">Where next</div>
+    <h2 class="title">Goals &amp; timeline</h2>
+    <ul class="pts" style="margin-top:22px">
+      <li><b>Now:</b> full CPC design comparison done on an open 8B model — single ≈ roles, multi-agent weakest</li>
+      <li><b>Immediate:</b> reproduce ~80% with frontier models; de-noise Judge/Gatekeeper; MIMIC-IV concordance</li>
+      <li><b>The contribution:</b> an adaptive delivery layer — when &amp; how to surface each recommendation</li>
+    </ul>
+    <table><tr><th>Period</th><th>Milestone</th><th>Venue</th></tr>
+      <tr><td>Q1 · Sep '26</td><td>Benchmark &amp; EHR environments</td><td>NeurIPS workshop</td></tr>
+      <tr><td>Q3 · Jan '27</td><td>Adaptive delivery policy</td><td>ICML (archival)</td></tr>
+      <tr><td>Q4 · May '27</td><td>Full system + clinical results</td><td>NeurIPS (archival)</td></tr></table>
+    <div class="foot">Adaptive Alert Delivery</div></div></body></html>

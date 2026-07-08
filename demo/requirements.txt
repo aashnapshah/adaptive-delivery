@@ -1,0 +1,15 @@
+# The demos run fully offline with the standard library (stub backend) - the only
+# hard requirements are numpy + matplotlib for the bandit and the figures.
+
+numpy>=1.21          # contextual bandit (Stage 05)
+matplotlib>=3.5      # schematics and plots (Stages 03, 05, 06)
+python-dotenv>=1.0   # loads demo/.env (OpenRouter key)
+
+# Notebooks:
+jupyter>=1.0
+nbclient>=0.7        # executes notebooks (avoids an nbconvert/jinja2 version clash)
+
+# Optional - only if you use a local model via Ollama. OpenRouter needs no extra
+# package: it is called over the standard-library HTTP client.
+ollama>=0.3
+waitress

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Adaptive Alert Delivery · Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+{% if not consented %}
+<div class="modal-backdrop" id="consentModal">
+  <div class="modal">
+    <h3>Research consent</h3>
+    <p>You're taking part in a research study on diagnostic decision support. Your responses, choices, and timing are recorded for analysis. All cases shown are research data, not real patients, and this is not a clinical system.</p>
+    <p class="modal-pid">Participant: <b>{{ pid }}</b></p>
+    <button class="btn primary" id="consentBtn">I consent, begin</button>
+  </div>
+</div>
+{% endif %}
+<div class="app wide">
+
+  <div class="top">
+    <div class="brand">Adaptive Alert Delivery<span class="dot"> ·</span> Pipeline</div>
+    <label class="modelpick" title="Model whose recorded runs are replayed across the tabs">
+      <span>Model</span>
+      <select id="modelSel"></select>
+    </label>
+    <div class="backend {{ '' if live else 'off' }}">
+      <span class="led"></span>{{ 'Live' if live else 'Offline' }}
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="on" data-tab="diagnose">Recommend</button>
+    <button data-tab="benchmark">Benchmark</button>
+    <button data-tab="score">Grading</button>
+    <button data-tab="deliver">Simulation</button>
+    <button data-tab="stats">Results</button>
+  </div>
+
+  <!-- ============ RECOMMEND ============ -->
+  <section class="tab on" data-tab="diagnose">
+    <div class="setup">
+      <label class="field hidden"><span>Case</span>
+        <select id="caseSel"><option value="">Pick a case…</option>
+          {% for c in cases %}<option value="{{ c.id }}">{{ c.label }}</option>{% endfor %}
+        </select>
+      </label>
+      <div class="seg modeseg"><button data-m="cpc" class="on">CPC</button><button data-m="ehr">EHR</button><button data-m="all">All</button></div>
+      <div class="pager" id="recPager">
+        <button class="pg-btn" id="pgPrev" title="previous">‹</button>
+        <span class="pg-pos"><input id="pgNum" type="text" inputmode="numeric" value="0"><span class="pg-sep">/</span><span id="pgTot">0</span></span>
+        <button class="pg-btn" id="pgNext" title="next">›</button>
+      </div>
+      <div class="panelbar hidden" id="panelBar"></div>
+    </div>
+
+    <div class="ctx hidden" id="caseCtx">
+      <div class="ctx-head">
+        <span class="ctx-label" id="ctxId">Patient</span>
+        <button class="ctx-toggle" id="vignetteToggle">View full case</button>
+      </div>
+      <div class="ctx-abs" id="ctxAbs"></div>
+      <pre class="ctx-full hidden" id="ctxFull"></pre>
+    </div>
+
+    <!-- AI agents side by side (workup shown by default), add more with the + in the top row -->
+    <div class="panels hidden" id="panels"></div>
+
+    <div class="empty-hint" id="recHint">Load an example case to see the agents' recommendations.</div>
+
+    <!-- Quadruple-Aim comparison sits at the bottom, summarizing the transcripts above it -->
+    <div class="quadreview hidden" id="quadReview"></div>
+  </section>
+
+  <!-- ============ BENCHMARK (clinician drives the case — human baseline) ============ -->
+  <section class="tab" data-tab="benchmark">
+    <div class="setup">
+      <div class="seg modeseg"><button data-m="cpc" class="on">CPC</button><button data-m="ehr">EHR</button><button data-m="all">All</button></div>
+      <div class="pager" id="clPager">
+        <button class="pg-btn" id="clPrev" title="previous">‹</button>
+        <span class="pg-pos"><input id="clNum" type="text" inputmode="numeric" value="0"><span class="pg-sep">/</span><span id="clTot">0</span></span>
+        <button class="pg-btn" id="clNext" title="next">›</button>
+      </div>
+    </div>
+    <div class="ctx hidden" id="clinCtx">
+      <div class="ctx-head"><span class="ctx-label" id="clinCtxId">Patient</span></div>
+      <div class="ctx-abs" id="clinCtxAbs"></div>
+    </div>
+    <div class="chat hidden" id="chat"></div>
+    <div class="composer" id="composer" style="display:none">
+      <select id="actSel"><option value="ask">Ask</option><option value="order">Order</option><option value="diagnose">Diagnose</option></select>
+      <input type="text" id="driveInput" placeholder="Work the case: ask, order a test, or commit a diagnosis…" />
+      <button class="btn primary" id="sendBtn">Send</button>
+    </div>
+    <div class="intro-card" id="clinHint"><h3>Work up a case yourself</h3>
+      <p>Page to a case above to begin. You see only the presentation: ask questions, order tests, and commit a diagnosis through the gatekeeper. The answer stays hidden until you decide.</p></div>
+  </section>
+
+  <!-- ============ EVALUATE (clinician grades, seeing the whole chat) ============ -->
+  <section class="tab" data-tab="score">
+    <div class="setup">
+      <div class="seg modeseg"><button data-m="cpc" class="on">CPC</button><button data-m="ehr">EHR</button><button data-m="all">All</button></div>
+      <div class="pager" id="grPager">
+        <button class="pg-btn" id="grPrev" title="previous">‹</button>
+        <span class="pg-pos"><input id="grNum" type="text" inputmode="numeric" value="0"><span class="pg-sep">/</span><span id="grTot">0</span></span>
+        <button class="pg-btn" id="grNext" title="next">›</button>
+      </div>
+    </div>
+    <div id="scoreBox"><div class="empty-hint">Load an example in Recommend first, then grade its recommendations here.</div></div>
+  </section>
+
+  <!-- ============ DEPLOY (clinician responds in the loop) ============ -->
+  <section class="tab" data-tab="deliver">
+    <div id="deployBox"><div class="empty-hint">Roll a case in Recommend first, then respond to its alerts here.</div></div>
+  </section>
+
+  <!-- ============ RESULTS (benchmark summary statistics) ============ -->
+  <section class="tab" data-tab="stats">
+    <div id="statsBox"><div class="empty-hint">No recordings to summarize yet.</div></div>
+  </section>
+
+  <div class="refs">
+    <span class="refs-h">References</span>
+    <a href="https://arxiv.org/abs/2506.22405" target="_blank" rel="noopener">Nori et al. (2025) · Sequential Diagnosis with Language Models (SDBench / MAI-DxO)</a>
+    <a href="https://arxiv.org/abs/2512.01241" target="_blank" rel="noopener">Wu et al. (2025) · First, do NOHARM: towards clinically safe large language models</a>
+  </div>
+</div>
+
+<script>window.__RECORDED__ = {{ recorded|tojson }}; window.__MODES__ = {{ recorded_modes|tojson }};</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,654 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Adaptive Delivery of LLM-Generated Diagnostic Test Recommendations</title>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{--ink:#1A1A1A;--body:#28323B;--muted:#69757F;--faint:#F1EDE8;--line:#E4DFD8;
+      --accent:#4E6E8E;--good:#4E8A5B;--cream:#F4F2F0;}
+*{box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{font-family:'Avenir Next','Avenir',system-ui,-apple-system,sans-serif;color:var(--body);
+     background:#fff;margin:0;padding:0}
+.page{max-width:820px;margin:0 auto;padding:64px 40px 120px}
+h1{font-size:30px;line-height:1.2;font-weight:600;color:var(--ink);letter-spacing:-.015em;margin:0 0 6px}
+h1+p{color:var(--muted);font-size:14px;margin:0 0 8px}
+h2{font-size:21px;font-weight:600;color:var(--ink);letter-spacing:-.01em;margin:52px 0 16px;
+   padding-top:26px;border-top:1px solid var(--line)}
+h3{font-size:16px;font-weight:600;color:var(--ink);margin:30px 0 10px}
+p{font-size:15px;line-height:1.72;margin:0 0 15px}
+strong{color:var(--ink);font-weight:600}
+em{color:inherit}
+a{color:var(--accent);text-decoration:none}
+ul,ol{font-size:15px;line-height:1.72;padding-left:22px}
+li{margin:3px 0}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:var(--faint);
+     border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+/* prompt blocks — a labelled card with a slate accent, wraps rather than scrolls */
+pre{background:#fbfaf8;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:12px;padding:18px 22px;overflow-x:auto;margin:20px 0}
+pre code{font-family:'Avenir Next','Avenir',system-ui,sans-serif;background:none;border:0;padding:0;
+         font-size:13px;line-height:1.7;color:var(--body);white-space:pre-wrap;word-break:break-word}
+/* tables — the figures' qr-table language: hairline card, muted uppercase headers, bold first column */
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;margin:24px 0;
+      border:1px solid var(--line);border-radius:12px;overflow:hidden}
+thead th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;
+         color:var(--muted);padding:12px 14px;background:#faf9f7;border-bottom:1px solid var(--line);
+         vertical-align:bottom}
+th[align=right],td[align=right]{text-align:right;font-variant-numeric:tabular-nums}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--faint);color:var(--body);vertical-align:top;
+         line-height:1.5}
+tbody td:first-child{color:var(--ink);font-weight:500}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fbfaf8}
+/* figures */
+img{display:block;max-width:100%;margin:26px auto 8px;border:1px solid var(--line);border-radius:12px}
+p.cap{text-align:center;color:var(--muted);font-size:12.5px;line-height:1.55;max-width:680px;
+      margin:0 auto 30px}
+p.cap em{font-style:normal}
+blockquote{border-left:3px solid var(--line);margin:18px 0;padding:2px 0 2px 18px;color:var(--muted)}
+</style></head><body><div class="page">
+<h1>Adaptive Delivery of LLM-Generated Diagnostic Test Recommendations</h1>
+<p><strong>Progress report · 2026-07-07 · Aashna Shah</strong></p>
+<h2>Abstract</h2>
+<p>Large language models now perform sequential diagnostic reasoning at expert level, yet the evidence
+suggests that their clinical value is limited less by diagnostic capability than by how recommendations
+are delivered to, and acted upon by, clinicians. This project studies that delivery problem. As a
+foundation, we have built an open, reproducible harness that reproduces and extends the sequential
+test-ordering benchmark of Nori et al. (2025). This report describes the completed generation pipeline —
+datasets, case presentation, the information Gatekeeper, three recommendation systems, an automated Judge,
+and the evaluation metrics — presents preliminary results, and sets out the plan. Comparing three
+recommender designs of increasing orchestration complexity, we find on an open 8B model that added
+orchestration does not improve diagnostic accuracy: a single prompt reasoning through the paper's five
+roles matches a plain single call, and splitting those roles across separate agents does not beat either
+while costing roughly twice the tokens and four times the wall-clock time. Across the full 100-case CPC set
+the two single-call designs are statistically indistinguishable, and the multi-agent panel is the weakest
+of the three. The immediate objective
+is to match the benchmark's headline accuracy (approximately 80%) using frontier models on our harness;
+the longer-term objective is an adaptive delivery layer that presents recommendations in a
+context-appropriate way to increase clinician uptake without increasing alert burden.</p>
+<hr />
+<h2>At a glance</h2>
+<p><strong>Goals.</strong> <em>Immediate:</em> reproduce the benchmark's headline accuracy (~80%) with a frontier model on our
+open, reproducible harness. <em>Longer-term:</em> an adaptive delivery layer that raises appropriate clinician
+uptake without adding alert burden.</p>
+<p><strong>Where we are.</strong> The generation pipeline is complete and validated end to end. The full 100-case CPC
+design comparison is done on an open 8B model (Llama-3.1-8B): the single call and the roles prompt are
+statistically indistinguishable (both 23%), and the multi-agent panel is the weakest (13%) at ~1.9× the
+compute — added orchestration does not buy accuracy on this model. Larger models, the MIMIC-IV
+concordance sweep, and the delivery layer are next.</p>
+<p><strong>Timeline and venues.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Milestone</th>
+<th>Target venue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q1 · Sep '26</td>
+<td>Benchmark and EHR environments</td>
+<td>NeurIPS workshop (GenAI4Health), non-archival</td>
+</tr>
+<tr>
+<td>Q2 · Nov '26</td>
+<td>Recommender and scoring</td>
+<td>AAAI Health Intelligence (W3PHIAI), non-archival</td>
+</tr>
+<tr>
+<td>Q3 · Jan '27</td>
+<td>Delivery-interface co-design</td>
+<td>CHI, non-archival</td>
+</tr>
+<tr>
+<td>Q3 · Jan '27</td>
+<td>Adaptive delivery policy</td>
+<td>ICML, archival</td>
+</tr>
+<tr>
+<td>Q4 · May '27</td>
+<td>Full system with clinical results</td>
+<td>NeurIPS, archival</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Intended contributions.</strong> The first study of the <em>delivery</em> of language-model clinical recommendations;
+new sequential test-ordering environments built from real EHR data and reusable by others; and a
+safety-grounded, multi-objective alerting layer reproducible on public data.</p>
+<hr />
+<h2>1. Introduction</h2>
+<h3>1.1 Motivation</h3>
+<p>Reasoning-capable language models now match or exceed physicians on diagnostic tasks (Brodeur 2026;
+Kanjee 2023; Nori 2025) and show strong differential-diagnosis performance (McDuff 2025; Tu 2025).
+Diagnostic capability, in other words, is no longer the primary constraint. The constraint is delivery.
+In a randomized clinical trial, Goh et al. (2024) found that although a language model on its own
+outperformed physicians, physicians <em>given access to</em> the model did not improve relative to those without
+it. The capability was available and went unused. This reflects a well-documented failure mode of clinical
+decision support: recommendations delivered as indiscriminate, interruptive alerts produce alert fatigue,
+after which clinicians override or disable them (AHRQ 2019; Baron 2021; Park 2022). A system that is
+diagnostically excellent but poorly delivered therefore captures little clinical value.</p>
+<h3>1.2 Prior work and its limitations</h3>
+<p>The most relevant prior work is Nori et al. (2025), which converts NEJM clinicopathological-conference
+(CPC) cases into interactive sequential encounters (the Sequential Diagnosis Benchmark, SDBench) and
+introduces MAI-DxO, an orchestrator that role-plays a panel of physicians. On the o3 model, MAI-DxO
+reaches approximately 80% diagnostic accuracy, against approximately 20% for generalist physicians, at
+lower cumulative test cost. It is a strong foundation, but it has four limitations for the question of
+clinical impact, which this project is designed to address.</p>
+<table>
+<thead>
+<tr>
+<th>Limitation of Nori et al. (2025)</th>
+<th>How this project addresses it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The benchmark ends when a diagnosis is produced; it does not model whether the recommendation is delivered or acted upon, which the Goh (2024) trial identifies as the decisive step.</td>
+<td>Adds a scoring, delivery, clinician-response, and evaluation layer downstream of generation.</td>
+</tr>
+<tr>
+<td>Evaluation is confined to rare, difficulty-selected CPC cases, a single clinical regime.</td>
+<td>Casts three clinical regimes as environments: CPC (rare), MIMIC-IV (acute), and Clalit (routine care).</td>
+</tr>
+<tr>
+<td>The objective is the Triple Aim (care, health, cost), which omits clinician workload and experience — the very factors that alerting mismanages.</td>
+<td>Introduces clinician workload and patient experience through the delivery layer (Section 4), which weighs uptake against alert burden; extending the recommender itself to these aims is left to future work.</td>
+</tr>
+<tr>
+<td>Results depend on a closed frontier model, limiting reproducibility.</td>
+<td>Runs on open models and public data throughout.</td>
+</tr>
+</tbody>
+</table>
+<h3>1.3 Research question and system overview</h3>
+<p>The research question is whether adaptive, context-aware delivery of language-model-generated diagnostic
+test recommendations can increase appropriate clinician uptake without increasing alerting burden. The
+guiding observation is that appropriateness alone is insufficient: alert compliance varies with context,
+prior results, the encounter, and the individual clinician (Baron 2021), so the same recommendation should
+be delivered differently in a busy emergency department than in a low-load clinic. The question is
+therefore not only whether a recommendation is appropriate, but how it should be presented given the
+context.</p>
+<p>The full system comprises five stages:</p>
+<ol>
+<li><strong>Recommend.</strong> A recommender works the case sequentially and proposes diagnostic tests; three designs
+   of increasing orchestration complexity are compared (Section 2.4).</li>
+<li><strong>Score.</strong> Each proposed recommendation is scored for appropriateness and potential harm.</li>
+<li><strong>Deliver.</strong> The recommendation is surfaced to the clinician through a presentation action chosen for
+   the context, ranging from an interruptive alert to passive display or suppression.</li>
+<li><strong>Record.</strong> The clinician's response — accept, dismiss, or defer — is captured.</li>
+<li><strong>Evaluate.</strong> Outcomes are measured on diagnostic accuracy, cost, and appropriate uptake.</li>
+</ol>
+<p>Stages 1, 2, and 5 (as they apply to the recommendation itself) are implemented and are the subject of
+this report; stages 3 and 4 are the project's forward-looking contribution and are outlined in Section 4.</p>
+<hr />
+<h2>2. Methods</h2>
+<p>The generation pipeline reproduces the SDBench/MAI-DxO harness of Nori et al. (2025) and adapts it as
+described in Section 1.2. The subsections below follow the pipeline in order. System prompts are
+reproduced in Appendix A.</p>
+<h3>2.1 Clinical vignettes</h3>
+<p>Each dataset is cast as a sequential decision environment in which an agent works a case turn by turn.
+The three environments are chosen to span the clinical regimes in which alerting behaves differently
+(Figure 1).</p>
+<p><img alt="The three clinical environments." src="figures/table_environments.png" /></p>
+<p class="cap"><em>Figure 1. The three clinical environments, matched in size so accuracy is comparable across regimes.</em></p>
+<p><em>CPC (rare and complex).</em> NEJM clinicopathological-conference narratives, the SDBench setting: long,
+deliberately difficult cases, each with a single confirmed diagnosis. The benchmark comprises 304 cases;
+we use a 100-case subset, for two reasons. First, at n = 100 accuracy is estimated to within roughly
+±6–7 percentage points at 95% confidence, which is sufficient to separate designs that differ by more than
+about ten points while bounding the compute cost of a full model-by-design sweep. Second, it matches the
+size of the MIMIC-IV cohort below, so accuracy is comparable across regimes. Extending to the full 304
+cases with the benchmark's held-out split is planned.</p>
+<p><em>MIMIC-IV (acute).</em> Ninety-eight real MIMIC-IV admissions, constructed by a fixed protocol to mirror the
+CPC set in size while representing the acute regime. Cases are drawn from emergency or urgent admissions
+whose principal ICD diagnosis is specific — codes containing "unspecified", "other", or "not elsewhere" are
+excluded so that the ground truth is gradeable — and whose stay records between 12 and 40 laboratory
+results, enough to support a non-trivial sequential work-up without being unwieldy. Scanning 260 candidate
+admissions under these criteria and targeting 100 yielded 98. The presentation is the intake demographics
+and admission context, the recorded chart itself serves as the Gatekeeper, and the real order set supports
+the ordering-concordance metric. Because these are credentialed patient data, they are processed only on
+the local environment and are never sent to hosted models. Running the full sweep on this cohort is in
+progress.</p>
+<p><em>Clalit (routine primary care).</em> Population-scale primary-care records, which are prevalence-representative
+and the setting in which over-testing predominantly occurs. The cohort will be constructed to the same
+target size and with an analogous specificity-and-workup filter, so that all three regimes are comparable.
+Integration is planned and depends on Clalit's data-governance process.</p>
+<h3>2.2 Case presentation</h3>
+<p>Every encounter opens with a short abstract, while the full record remains hidden behind the Gatekeeper
+(Section 2.3). In CPC case <code>NEJM200003303421308</code>, for example, the agent initially observes only the
+presenting line ("A 63-year-old man was admitted in early July because of rapidly progressive changes in
+behavior and ataxia"), while the ground-truth diagnosis (cerebral amyloid angiopathy with giant-cell
+inflammatory reaction) is withheld. At each step the running state is presented as the abstract, followed
+by any revealed history and examination findings, each ordered test with its returned result, and a
+cumulative cost. Each question, order, or diagnosis constitutes one turn, and orders are batched to at most
+three tests per round, following MAI-DxO. Episodes run to a maximum of eight turns; if the agent has not
+committed by then, a diagnosis is forced so that every episode ends with a scored verdict.</p>
+<p><img alt="An example encounter replayed in the application." src="figures/example_transcript.png" /></p>
+<p class="cap"><em>Figure 2. An example encounter as replayed in the application. The agent (right) sees only the
+presentation, orders tests one turn at a time, and the Gatekeeper (left) returns each finding; the Judge
+grades the committed diagnosis against the withheld ground truth. Shown for CPC case NEJMcpc030015
+(Llama-3.1-8B, single-LLM design).</em></p>
+<h3>2.3 The Gatekeeper</h3>
+<p>The Gatekeeper is an information oracle that holds the complete case file, including the ground-truth
+diagnosis, and reveals a finding only in response to a specifically named question or test (Figure 3).
+Vague requests are refused; for any item not present in the record, it synthesizes a case-consistent
+result so that an "unavailable" response never reveals which diagnostic paths lie off the record. It is
+implemented in two
+forms: a rule-based lookup returning exact stored values for structured EHR cases, and a language-model
+backend, run with reasoning disabled, for the free-text CPC narratives. This follows the design of
+Nori et al. — synthesize rather than refuse, and never reveal diagnostic hints. The principal difference
+is validation: they employ a dedicated o4-mini Gatekeeper validated by physicians on 508 responses,
+whereas in our current runs the Gatekeeper shares the agent's model and has not yet been physician-validated.</p>
+<p><img alt="The Gatekeeper's request-to-finding logic." src="figures/schematic_gatekeeper.png" /></p>
+<p class="cap"><em>Figure 3. The Gatekeeper answers a specifically named question or test — verbatim when the finding is in
+the record, a case-consistent <code>[simulated]</code> value when it is not, and a refusal for vague requests — while
+never revealing the diagnosis.</em></p>
+<h3>2.4 Recommendation systems</h3>
+<p>The recommendation system is the agent that works the case. We evaluate three designs that form a ladder
+of increasing orchestration complexity — basic, medium, and complex — holding the underlying clinical
+reasoning fixed so that the comparison isolates the effect of orchestration rather than confounding it
+with a change of roles. All three ultimately draw on the same five clinical roles (the MAI-DxO personas of
+Nori et al.); they differ only in how those roles are invoked. The question this ladder is built to answer
+is not whether more machinery <em>can</em> help but whether it is <em>warranted</em>: whether progressively more
+orchestration buys accuracy that a simpler design does not already deliver, and at what compute cost
+(Figure 4).</p>
+<p><img alt="The three recommender designs as a ladder of orchestration." src="figures/schematic_recommenders.png" /></p>
+<p class="cap"><em>Figure 4. The three recommender designs. The same five MAI-DxO roles run throughout; only the
+orchestration changes — one call (basic), one call reasoning through all five roles (medium, the paper's
+MAI-DxO orchestrator), and five separate agents reconciled by a coordinator (complex, our extension), which
+costs roughly six model calls per turn against one.</em></p>
+<p><em>Single LLM (basic).</em> A single model call that emits one action per turn, directed to reason from the
+presentation, form a differential, order the most discriminating test, and ultimately name a specific
+diagnosis. This is the plain generalist baseline of Nori et al., with no explicit panel.</p>
+<p><em>Roles prompt (medium).</em> A single call that reasons through the five MAI-DxO perspectives together before
+acting: Hypothesis (a probability-ranked differential), Test-Chooser (the most discriminating test),
+Challenger (evidence that would falsify the leading diagnosis), Stewardship (cost), and Checklist (a
+validity check). This is the paper's MAI-DxO orchestrator as it is actually implemented: Nori et al.'s
+orchestrator is itself a single language model role-playing the five personas within one call. This design
+is therefore not an approximation of MAI-DxO but our direct rendition of it.</p>
+<p><em>Multi-agent panel (complex).</em> Our extension beyond the paper. The same five personas are split into five
+<em>independent</em> model calls — one per persona — whose proposals a sixth coordinator call reconciles into one
+action. Where the paper's orchestrator role-plays the panel inside a single call, this design makes the
+panel genuinely multi-agent, at roughly five to six model calls per turn against the single call of the
+other two. Because the roles are held fixed across all three designs, the basic, medium, and complex
+variants form a controlled ladder that separates the cost of orchestration (Section 3.2) from any accuracy
+it provides (Section 3.1), and in particular tests whether going beyond the paper's single-call
+orchestrator to a true multi-agent panel is warranted.</p>
+<h3>2.5 The Judge</h3>
+<p>The Judge scores the agent's final diagnosis against the ground truth on the benchmark's five-point rubric,
+which grades the core entity, etiology, site, specificity, and completeness; a score of 4 or above is
+counted as correct (Figure 5). It is implemented as a language-model grader returning a score and a one-line
+justification, with a keyword-matching fallback. We adopt the rubric and threshold of Nori et al.
+unchanged. The difference, again, is grader strength and validation: they use o3 as Judge, validated
+against physicians at Cohen's κ = 0.70–0.87, whereas we currently run the Judge on the agent's own model
+and have not yet validated it. Moving the Judge to a fixed, strong model is a near-term priority.</p>
+<p><img alt="The Judge's 1–5 rubric and the correctness threshold." src="figures/schematic_judge.png" /></p>
+<p class="cap"><em>Figure 5. The Judge grades the candidate against the reference diagnosis on the paper's 1–5 rubric; a
+score of 4 or above counts as correct. The worked example is the West Nile encounter of Figure 2.</em></p>
+<h3>2.6 Evaluation metrics</h3>
+<p>We distinguish metrics the harness computes automatically from those that require a clinician grader.</p>
+<p><em>Diagnostic quality.</em> Accuracy is the proportion of cases scored 4 or above by the Judge; the mean Judge
+score on the 1–5 rubric is reported as a finer-grained signal. Because the CPC cases span specialties,
+accuracy can additionally be reported per specialty once the sweep provides sufficient cases per specialty.</p>
+<p><em>Cost, effort, and compute.</em> Each accuracy figure is paired with the effort required to obtain it. Dollar
+cost combines a fixed physician-visit fee of $300, charged once per burst of questions before a test, with
+a per-test price drawn from the schedule below. Interaction length (turns, tests, and questions) proxies
+clinician effort, and compute (tokens, reasoning tokens where exposed, and latency) determines
+local-versus-hosted feasibility.</p>
+<table>
+<thead>
+<tr>
+<th>Test category</th>
+<th>USD</th>
+<th>Test category</th>
+<th>USD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PET / PET-CT</td>
+<td>1500</td>
+<td>Lumbar puncture / CSF</td>
+<td>300</td>
+</tr>
+<tr>
+<td>Endoscopy / bronchoscopy / colonoscopy</td>
+<td>800</td>
+<td>Echocardiography / ultrasound</td>
+<td>200</td>
+</tr>
+<tr>
+<td>MRI</td>
+<td>600</td>
+<td>Serology / antibody / titer</td>
+<td>100</td>
+</tr>
+<tr>
+<td>Biopsy / bone marrow</td>
+<td>600</td>
+<td>Culture / Gram stain</td>
+<td>80</td>
+</tr>
+<tr>
+<td>Angiography / CTA</td>
+<td>500</td>
+<td>Basic labs (CBC, CMP, ESR, CRP)</td>
+<td>30</td>
+</tr>
+<tr>
+<td>Flow cytometry / genetic / PCR</td>
+<td>400</td>
+<td>Radiography / mammography</td>
+<td>50</td>
+</tr>
+<tr>
+<td>CT</td>
+<td>300</td>
+<td>Unmatched (default)</td>
+<td>100</td>
+</tr>
+</tbody>
+</table>
+<p>The visit fee and question-burst rule are identical to Nori et al.; the test pricing differs, in that they
+map each order to CPT codes priced from a 2023 US CMS transparency table, whereas we use the hand-set
+schedule above. Our absolute figures are therefore coarser and not CPT-grounded, but because the same
+schedule applies to every agent, relative comparisons hold. A CPT-coded lookup is planned.</p>
+<p><em>Ordering concordance.</em> On the structured-EHR cases we store the labs actually measured for the real
+patient, allowing us to assess whether the agent's work-up concorded with real practice. We report recall
+(the proportion of measured labs the agent's orders covered) and precision (the proportion of the agent's
+orders corresponding to a measured lab). Matching is performed by a language model so that a panel maps to
+its component analytes. This metric applies to MIMIC-IV and Clalit, where a real order set exists.</p>
+<p><em>Appropriateness and harm.</em> The appropriateness and potential harm of each recommendation are graded by
+clinicians. A deterministic prototype scorer, adapted from the NOHARM rubric (Wu et al. 2025), is
+maintained to drive the delivery reward, but the measurement of record is the clinician grade. The
+application includes an expert-grading console in which a clinician grades a sampled recommendation while
+the prototype score is recorded but hidden, so that the human grade is not biased by it. We then report the
+clinician grades and, separately, their agreement with the prototype scorer.</p>
+<p><em>Ablations and sweeps.</em> Two harnesses probe the recommendation systems in more depth: a leave-one-out
+ablation of the multi-agent panel, which removes one persona at a time to identify which contributes any
+gain the panel provides, and a budget sweep, which caps cumulative spend at a series of ceilings to trace
+how each design degrades as cost is constrained. Both are implemented; their results are reported in
+Section 3.</p>
+<h3>2.7 Software</h3>
+<p>The pipeline is operable as a web application with one view per stage and a model selector that replays any
+recorded model. It records every diagnostic transcript and serves as the substrate for both the automated
+benchmark and the planned human study.</p>
+<hr />
+<h2>3. Results</h2>
+<p>The pipeline runs end to end. The numbers below come from the completed Llama-3.1-8B CPC run: the full
+100-case set, all three designs. This slice of the sweep is therefore final; larger models (Qwen3-32B
+here; 70B and hosted frontier models are pending) are reported where a run has completed. The compute cost
+of each design is the most reliable signal, and the accuracy ordering is now supported by the full run.</p>
+<p><strong>Key result.</strong> On the sequential CPC benchmark, added orchestration does not improve diagnostic accuracy
+on the 8B model. A single prompt that reasons through the five MAI-DxO roles (medium) matches a plain
+single LLM (basic), and splitting those same roles across independent agents (complex) does not beat
+either — while costing roughly twice the tokens and four to five times the wall-clock time. On this
+evidence the paper's single-call orchestrator captures whatever the roles contribute, and the further step
+to a genuine multi-agent panel is not yet warranted. The samples are small and the accuracy intervals wide,
+so the robust signal is the compute cost, not the accuracy ordering.</p>
+<table>
+<thead>
+<tr>
+<th>Quantity</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Accuracy: single LLM vs. roles prompt (Llama-3.1-8B, n = 100)</td>
+<td>23% vs. 23%</td>
+</tr>
+<tr>
+<td>Accuracy: multi-agent panel (same slice)</td>
+<td>13%</td>
+</tr>
+<tr>
+<td>Compute of multi-agent vs. single-call designs (tokens / wall-time)</td>
+<td>≈ 1.9× / ≈ 4.3×</td>
+</tr>
+</tbody>
+</table>
+<h3>3.1 Main finding: accuracy versus cost and effort</h3>
+<p><em>Method.</em> Each design works every case through the information Gatekeeper, which reveals a finding only
+when the agent asks and at a cost, and the final diagnosis is graded 1–5 by the Judge (4 or above counts as
+correct). The three designs form the basic → medium → complex ladder of Section 2.4. Accuracy is plotted
+against each of cost, turns, and tests, so that points nearer the upper-left — more accurate, cheaper, or
+fewer turns — are preferable; whiskers are 95% confidence intervals (Figure 6).</p>
+<p><em>Result.</em> On the full Llama-3.1-8B run (n = 100), the basic single LLM and the medium roles prompt reach
+the same accuracy (23% each; mean Judge 1.80 and 1.90), with heavily overlapping confidence intervals, so
+they are statistically indistinguishable. The complex multi-agent panel is lower (13%; mean Judge 1.47). The
+panel also behaves differently: it commits after about 6 turns rather than the full 8.0 and orders almost
+no tests (0.4 per case against roughly 6.5 for the single-call designs), so its low dollar cost reflects
+early commitment rather than efficient work-up. The full CPC run is reported in Table 1.</p>
+<p><em>Interpretation.</em> On this model no accuracy separates the basic and medium designs, and the complex panel
+does not improve on either. Even with the intervals down to about ±8 at n = 100, the two single-call
+designs remain indistinguishable, while the multi-agent panel is consistently and clearly lower — so added
+orchestration is not buying accuracy here. Whether
+a more capable base model changes this is open — the Qwen3-32B rows are a first, small-n look — and is the
+reason the sweep continues across models.</p>
+<p><img alt="The application's Results view for the CPC benchmark." src="figures/results_dashboard.png" /></p>
+<p class="cap"><em>Figure 6. The application's Results view for the CPC benchmark: accuracy versus cost, turns, and tests for
+the three designs, with the per-design summary beneath (Llama-3.1-8B, n = 100; whiskers are 95% CIs; the
+green dot marks the best value in each column). The panels fill in across models as the sweep proceeds.</em></p>
+<p class="cap"><em>Table 1. CPC sweep in progress. The Llama-3.1-8B rows are the controlled basic → medium → complex ladder
+(same roles throughout); accuracy is shown with its 95% CI. The Qwen3-32B rows are a small-n, larger-model
+preview; its multi-agent run and the 70B and hosted models are pending.</em></p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Design</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">Accuracy</th>
+<th style="text-align: right;">Mean Judge</th>
+<th style="text-align: right;">Cost</th>
+<th style="text-align: right;">Turns</th>
+<th style="text-align: right;">Tests</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Llama-3.1-8B</td>
+<td>Single LLM (basic)</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">23% ±8</td>
+<td style="text-align: right;">1.80</td>
+<td style="text-align: right;">$1,279</td>
+<td style="text-align: right;">8.0</td>
+<td style="text-align: right;">6.8</td>
+</tr>
+<tr>
+<td>Llama-3.1-8B</td>
+<td>Roles prompt (medium)</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">23% ±8</td>
+<td style="text-align: right;">1.90</td>
+<td style="text-align: right;">$1,438</td>
+<td style="text-align: right;">8.0</td>
+<td style="text-align: right;">6.4</td>
+</tr>
+<tr>
+<td>Llama-3.1-8B</td>
+<td>Multi-agent (complex)</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">13% ±7</td>
+<td style="text-align: right;">1.47</td>
+<td style="text-align: right;">$433</td>
+<td style="text-align: right;">5.7</td>
+<td style="text-align: right;">0.4</td>
+</tr>
+<tr>
+<td>Qwen3-32B</td>
+<td>Single LLM (basic)</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">60%</td>
+<td style="text-align: right;">3.60</td>
+<td style="text-align: right;">$1,530</td>
+<td style="text-align: right;">4.0</td>
+<td style="text-align: right;">6.4</td>
+</tr>
+<tr>
+<td>Qwen3-32B</td>
+<td>Roles prompt (medium)</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">40%</td>
+<td style="text-align: right;">3.00</td>
+<td style="text-align: right;">$1,340</td>
+<td style="text-align: right;">4.0</td>
+<td style="text-align: right;">5.4</td>
+</tr>
+</tbody>
+</table>
+<p>Two patterns are visible even at this sample size. First, holding the roles fixed, moving from one call
+(basic, medium) to five separate agents (complex) does not raise accuracy on either model slice; on the 8B
+model it lowers it. Second, the small-n Qwen3-32B rows show the base model is the larger lever — the basic
+single LLM on the 32B model already reaches 60%, above any 8B design — which is why the sweep continues to
+more capable models before drawing firm conclusions.</p>
+<h3>3.2 Cost of complexity: per-case compute and workup</h3>
+<p><em>Method.</em> For each design we log the LLM tokens, the wall-clock time to a delivered recommendation, the
+dollar cost of the tests ordered, the interaction turns, and the number of tests, averaged per case with
+95% confidence intervals. The complex multi-agent panel issues roughly five to six LLM calls per turn (one
+per persona plus a coordinator), whereas the basic and medium designs issue one.</p>
+<p><em>Result.</em> The compute gap is the clearest signal in the data. On Llama-3.1-8B a case costs about 23,100
+tokens and 65 seconds under the single LLM and 24,700 tokens and 56 seconds under the roles prompt, but
+about 44,900 tokens and 259 seconds under the multi-agent panel — roughly 1.9× the tokens and 4.3× the
+wall-clock time of the single-call designs (Figure 7).</p>
+<p><em>Interpretation.</em> The multi-agent panel's tokens and latency rise sharply while its accuracy does not, so
+on this model the additional machinery is not justified for test recommendation: the single-call roles
+prompt delivers comparable accuracy at a fraction of the compute. This profile also determines feasibility —
+a single-call design at ~23k tokens per case is far more practical to run locally, or at scale, than a
+panel at ~45k tokens and several minutes per case.</p>
+<p><img alt="Figure 7. Per-case compute and workup cost across tokens, time, dollar cost, turns, and tests." src="figures/cpc_cost.png" /></p>
+<p class="cap"><em>Figure 7. Per-case cost profile across the three designs (Llama-3.1-8B, n = 100; further configurations are
+added as the sweep proceeds).</em></p>
+<h3>3.3 Evaluation in progress</h3>
+<p>The remaining evaluation harnesses are implemented and instrumented but not yet informative, because they
+have so far run only on the weak 8B model or await credentialed data. Their status is summarized in
+Table 2.</p>
+<p class="cap"><em>Table 2. Status of the remaining evaluations.</em></p>
+<table>
+<thead>
+<tr>
+<th>Evaluation</th>
+<th>Instrument</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Panel ablation (leave-one-out over the five personas)</td>
+<td>Implemented; run on 8B</td>
+<td>Not yet informative; requires a capable model to separate personas</td>
+</tr>
+<tr>
+<td>Budget sweep (accuracy under cost ceilings)</td>
+<td>Implemented; run on 8B</td>
+<td>Accuracy-versus-budget curves pending a capable model</td>
+</tr>
+<tr>
+<td>Ordering concordance (recall / precision)</td>
+<td>Implemented; MIMIC-IV cohort built (98 cases)</td>
+<td>Sweep on the MIMIC-IV cohort in progress; Clalit pending</td>
+</tr>
+<tr>
+<td>Appropriateness and harm</td>
+<td>Grading console implemented</td>
+<td>Awaits clinician grading</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>4. Discussion and next steps</h2>
+<h3>4.1 Finalizing the pipeline: toward 80% accuracy</h3>
+<p>The immediate objective is to reproduce the benchmark's headline accuracy — approximately 80% with a
+frontier model — on our own harness. This requires four steps. First, completing the model sweep: finishing
+Qwen3-32B across all three designs, re-running the 70B at full sample size, and adding hosted frontier
+models (for example GPT-5, Gemini-2.5-Pro, and Claude-Sonnet-5) as API access permits, which is the direct
+test of whether the reported gains reproduce and whether we reach approximately 80%. Second, de-noising the
+environment by moving the Judge and Gatekeeper onto a fixed, strong model separate from the agent. Third,
+sharpening cost and coverage through a CPT-coded cost lookup and the loading of the real MIMIC-IV and
+Clalit environments. Fourth, running the deferred evaluations — the panel ablation, budget sweep, and
+per-specialty breakdown — which become informative once a capable model is in place.</p>
+<h3>4.2 Longer-term direction: adaptive delivery</h3>
+<p>Once the generation pipeline is solid, the project's novel contribution is an adaptive delivery layer that
+learns how to present each scored recommendation so as to increase appropriate clinician uptake without
+increasing alert burden. The pipeline described in this report is the foundation for that work. The design
+and evaluation of the delivery layer, including the human study required to calibrate and validate it,
+will be detailed in a subsequent report.</p>
+<h3>4.3 Risks</h3>
+<p>(The timeline, target venues, and intended contributions are summarized in <em>At a glance</em> above.) The
+principal risks are the gap between the response simulator and real clinician behavior, mitigated by
+calibration on real override data and silent-mode validation; latency in data access (PhysioNet and Clalit
+governance); and the alert-fatigue trade-off of suppressing too much and missing high-value recommendations,
+tracked explicitly as a safety-miss rate.</p>
+<hr />
+<h2>References</h2>
+<ul>
+<li>Nori, H., et al. (2025). <em>Sequential Diagnosis with Language Models.</em> Microsoft AI. arXiv:2506.22405.</li>
+<li>Goh, E., et al. (2024). <em>Large Language Model Influence on Diagnostic Reasoning: A Randomized Clinical
+  Trial.</em> JAMA Network Open 7(10):e2440969.</li>
+<li>Brodeur, P., et al. (2026); Kanjee, Z., et al. (2023); McDuff, D., et al. (2025); Tu, T., et al. (2025) —
+  language-model diagnostic reasoning.</li>
+<li>Wu, J., et al. (2025). <em>First, Do No Harm: Towards Clinically Safe Large Language Models.</em>
+  arXiv:2512.01241.</li>
+<li>Baron, J.M., et al. (2021) — context-dependent alert compliance and duplicate-alert burden.</li>
+<li>Varatharajah, Y., et al. (2022) — contextual bandits for context-adaptive clinical decisions.</li>
+<li>Berwick, D.M., Nolan, T.W., Whittington, J. (2008). <em>The Triple Aim.</em> Health Affairs 27(3):759–769.</li>
+<li>Shrank, W.H., et al. (2019); Muskens, J., et al. (2022); AHRQ (2019) — overuse and alert fatigue.</li>
+</ul>
+<hr />
+<h2>Appendix A. System prompts</h2>
+<p>The prompts below are transcribed from the implementation.</p>
+<h3>A.1 Gatekeeper</h3>
+<pre><code>You are the Gatekeeper in a sequential-diagnosis simulation. You hold the full case file, INCLUDING the
+true diagnosis. A clinician asks a history/exam question or orders a specific test; return only that
+finding, as a chart or result would read, medically consistent with THIS patient. Rules:
+1. ANSWER EVERY SPECIFIC REQUEST. Resolve synonyms/abbreviations ('LP'='lumbar puncture'; 'CBC'='complete
+   blood count'; 'head CT'='CT of the brain'). A specifically named test or question is ALWAYS answered —
+   NEVER refuse it, even if it targets a specific disease or organism.
+2. IF THE FILE STATES IT: report the finding EXACTLY — copy values, units, and descriptors verbatim. IF
+   NOT IN THE FILE: give ONE brief result that is medically correct for THIS case; prefix any value you
+   supply that is not in the file with '[simulated] '.
+3. Report the objective FINDING only. Do NOT state or interpret the final diagnosis by name.
+4. REFUSE only a vague or shotgun request ('labs', 'imaging', 'work it up'): reply 'REFUSE: name a
+   specific test.'
+5. Answer in 1-2 lines, objective findings only.
+</code></pre>
+<h3>A.2 Judge</h3>
+<pre><code>You are the Judge in a sequential-diagnosis benchmark. Compare the CANDIDATE diagnosis to the REFERENCE
+diagnosis and score 1-5 on this rubric (accept medical synonyms):
+5 = clinically identical, or a strictly MORE specific version (added detail must be directly related).
+4 = core disease correct; a secondary qualifier missing or slightly mis-specified; management largely
+    unchanged.
+3 = correct general category but a MAJOR error in etiology/site/specificity, or a correct dx bundled with
+    an unrelated one.
+2 = shares superficial features only; fundamentally misdirects the workup.
+1 = no meaningful overlap; wrong organ/system; following it would lead to harmful care.
+A score &gt;= 4 counts as CORRECT. Reply with ONLY JSON: {&quot;score&quot;: &lt;1-5 int&gt;, &quot;reason&quot;: &quot;&lt;one line&gt;&quot;}.
+</code></pre>
+<h3>A.3 Recommendation systems</h3>
+<pre><code>Single LLM. You are the clinician deciding the work-up for a patient who has just presented. Reach the
+correct diagnosis by ordering a focused SERIES of diagnostic tests. Each turn, take ONE action using XML
+tags: &lt;question&gt;, &lt;test&gt;, or &lt;diagnosis&gt;. Reason from the presentation, form a short differential, then
+order the test that best DISCRIMINATES between your leading possibilities. Name the SPECIFIC
+disease/etiology/organism (e.g. 'West Nile virus meningoencephalitis', NOT 'viral meningitis').
+
+Roles prompt. Before each action, briefly CONSIDER these five expert perspectives together: (1) Hypothesis —
+a probability-ranked differential of the three most likely conditions, updated in a Bayesian way; (2)
+Test-Chooser — the test that best DISCRIMINATES among the leading hypotheses; (3) Challenger — devil's
+advocate against anchoring bias, weighing evidence that would FALSIFY the leading diagnosis; (4)
+Stewardship — a lower-cost alternative when diagnostically equivalent, avoiding expensive low-yield tests;
+(5) Checklist — a validity check on the test name and the reasoning. Then take ONE action.
+
+Multi-agent panel. The same five personas each reply independently as JSON
+{&quot;action&quot;,&quot;query&quot;,&quot;dx&quot;,&quot;why&quot;} — Dr. Hypothesis, Dr. Test-Chooser, Dr. Challenger, Dr. Stewardship, and
+Dr. Checklist. A COORDINATOR (MAI-DxO style) then reconciles their proposals into the one best action:
+the diagnostically necessary step that best discriminates the leading hypotheses, by the least-cost valid
+means, after weighing the Challenger's objections.
+</code></pre>
+<hr />
+<p><em>Project code, harness, and interactive application are maintained under <code>lab-tests/demo/</code>; figures under
+<code>reports/figures/</code>. Constants and prompts are transcribed from the implementation. A de-noised model re-run
+is in progress as of 2026-07-07.</em></p>
+</div></body></html>

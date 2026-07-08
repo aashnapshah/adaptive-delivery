@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Adaptive Alert Delivery — End-to-end pipeline (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f4f6f8;--panel:#fff;--ink:#28323b;--muted:#69757f;--line:#dbe1e7;
+        --blue:#2c6fb3;--blue-d:#1b4f82;--green:#2e7d4f;--red:#b3322c;--chip:#eef1f4;--amber:#b07a16}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.55 "Work Sans","Avenir Next",ui-sans-serif,-apple-system,Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+  .mockup-banner{background:#222;color:#fff;text-align:center;padding:6px;font-size:12px;letter-spacing:.04em}
+  .mockup-banner b{color:#ffd24a}
+  /* patient banner */
+  header.app{background:var(--panel);border-bottom:1px solid var(--line);padding:10px 22px;
+             display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  header.app .title{font-weight:700;font-size:15px}
+  header.app .pt{color:var(--muted);font-size:13px}
+  header.app .pt b{color:var(--ink)}
+  header.app .badge{font-size:11px;padding:2px 9px;border-radius:20px;background:var(--chip);color:var(--blue-d);font-weight:700}
+  /* tab bar */
+  .tabbar{display:flex;gap:4px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap;position:sticky;top:0;z-index:20}
+  .tabbar button{border:0;background:none;padding:12px 14px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent}
+  .tabbar button .n{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:var(--chip);font-size:11px;margin-right:6px;color:var(--blue-d)}
+  .tabbar button.on{color:var(--blue-d);border-bottom-color:var(--blue)}
+  .tabbar button.on .n{background:var(--blue);color:#fff}
+  .tabbar button:disabled{opacity:.45;cursor:not-allowed}
+  /* layout */
+  .wrap{max-width:1100px;margin:18px auto;padding:0 16px}
+  section.tab{display:none} section.tab.on{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 330px;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .panel h3{margin:0 0 6px;font-size:14px}
+  .lead{font-size:13px;color:var(--muted);margin:-4px 0 12px}
+  .vignette{background:#f7fafd;border-left:4px solid var(--blue);padding:10px 12px;border-radius:6px;margin-bottom:12px}
+  .btn{padding:9px 15px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:600;cursor:pointer;font:inherit}
+  .btn:hover{background:var(--blue-d)} .btn.ghost{background:#fff;color:var(--blue-d);border:1px solid var(--line)}
+  .btn.ghost.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  input,select{font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .chip{font-size:11.5px;padding:2px 9px;border-radius:20px;background:var(--chip);color:var(--ink);white-space:nowrap}
+  .chip.good{background:#e4f2ea;color:var(--green)} .chip.harm{background:#f7e8e6;color:var(--red)} .chip.low{background:#fbf3e0;color:var(--amber)}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .ok{color:var(--green);font-weight:600} .no{color:var(--red);font-weight:600} .mut{color:var(--muted)}
+  .footer{color:var(--muted);font-size:12px;margin:10px 0 30px}
+  iframe.embed{width:100%;height:760px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .tag{font-size:11px;font-weight:700;color:var(--blue-d);letter-spacing:.04em}
+  /* environment */
+  .gk-log{font-size:13px;max-height:300px;overflow:auto;margin:0;padding:0;list-style:none}
+  .gk-log li{padding:7px 9px;border-radius:7px;margin-bottom:5px;background:var(--chip)}
+  .gk-log li .q{font-weight:600} .gk-log li .cost{float:right;color:var(--muted);font-size:12px}
+  .gk-log li.norm{background:#f6f7f8;color:var(--muted)}
+  .record table{margin-bottom:8px} .record .hide{color:var(--red);font-size:12px}
+  .verdict{padding:10px 12px;border-radius:8px;margin-top:10px;font-weight:600;display:none}
+  .verdict.show{display:block} .verdict.good{background:#e4f2ea;color:var(--green)} .verdict.bad{background:#f7e8e6;color:var(--red)}
+  /* generation cards */
+  .cfg{border:1px solid var(--line);border-radius:10px;padding:13px;background:#fff;display:flex;flex-direction:column}
+  .cfg.ours{border-color:#bfe0cd;box-shadow:0 0 0 2px #e4f2ea inset}
+  .cfg .name{font-weight:700} .cfg .panelLbl{font-size:11.5px;color:var(--muted);margin-bottom:6px}
+  .cfg .blurb{font-size:12.5px;color:var(--muted);margin:6px 0 10px;min-height:54px}
+  .cfg ul{margin:0 0 8px;padding:0;list-style:none;font-size:13px}
+  .cfg li{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #f0f3f5}
+  .cfg .tot{margin-top:auto;font-weight:600;display:flex;justify-content:space-between;border-top:2px solid var(--line);padding-top:8px}
+  .cfg .dx{font-size:12.5px;margin-top:6px}
+  /* svg chart */
+  svg.chart{width:100%;height:300px;background:#fff;border:1px solid var(--line);border-radius:8px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin:10px 0}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="mockup-banner"><b>MOCKUP</b> &nbsp;Synthetic data, illustrative only — the operable face of the research plan's five Methods stages. Not a clinical system.</div>
+
+<header class="app">
+  <div class="title">Adaptive Alert Delivery — Pipeline</div>
+  <div class="pt" id="ptBanner">No case selected — start on the <b>Case</b> tab.</div>
+  <div class="badge" id="ptBadge">—</div>
+</header>
+
+<nav class="tabbar" id="tabbar"></nav>
+
+<div class="wrap">
+
+  <!-- 0. CASE ------------------------------------------------------------ -->
+  <section class="tab on" data-tab="case">
+    <div class="panel">
+      <h2>Step 0 · Pick the patient</h2>
+      <div class="lead">One synthetic patient flows through every downstream tab. Draw at random, or choose an input format — the project must handle both a structured EHR record and a free-text narrative.</div>
+      <div class="row">
+        <button class="btn" onclick="drawRandom()">🎲 Draw random case</button>
+        <button class="btn ghost" id="pickEhr" onclick="pickCase('ehr')">Structured EHR (MIMIC-IV-shaped)</button>
+        <button class="btn ghost" id="pickCpc" onclick="pickCase('cpc')">Narrative CPC (NEJM-style)</button>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel" id="caseAbstract"><h2>Selected case</h2><div class="mut">Nothing picked yet.</div></div>
+      <div class="panel record" id="caseRecord"><h2>What the Gatekeeper holds (hidden from the agent)</h2><div class="mut">—</div></div>
+    </div>
+  </section>
+
+  <!-- 1. ENVIRONMENT ----------------------------------------------------- -->
+  <section class="tab" data-tab="env">
+    <div class="panel"><h2>Stage 01 · Gatekeeper environment</h2>
+      <div class="lead">The agent sees only the one-line abstract. Ask history/exam questions or order tests; the gatekeeper reveals each finding only on request and charges for it. Anything off-record returns a plausible-normal result. Commit a diagnosis and the Judge scores it.</div>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="panel">
+          <h2>Abstract (all the agent is given)</h2>
+          <div class="vignette" id="envAbstract">—</div>
+          <div class="row">
+            <input id="envInput" style="flex:1;min-width:220px" placeholder="Ask a question or order a test…" onkeydown="if(event.key==='Enter')gkSubmit()" />
+            <select id="envMode"><option value="ask">Ask</option><option value="test">Order test</option></select>
+            <button class="btn" onclick="gkSubmit()">Send</button>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <span class="mut" style="font-size:12px">Quick:</span>
+            <span id="envQuick"></span>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <input id="envDx" style="flex:1;min-width:220px" placeholder="Commit final diagnosis…" onkeydown="if(event.key==='Enter')gkDiagnose()" />
+            <button class="btn ghost" onclick="gkDiagnose()">Diagnose</button>
+          </div>
+          <div class="verdict" id="envVerdict"></div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <h2>Encounter</h2>
+          <div class="row" style="justify-content:space-between">
+            <span>Running cost</span><span style="font-weight:700">$<span id="envCost">0</span></span>
+          </div>
+          <ul class="gk-log" id="envLog" style="margin-top:10px"><li class="mut">No findings revealed yet.</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. GENERATION ------------------------------------------------------ -->
+  <section class="tab" data-tab="gen">
+    <div class="panel"><h2>Stage 02 · Recommendation generation</h2>
+      <div class="lead">Three generation configs run the same case (outputs pre-baked — the configs only diverge with a live LLM). Each is shown as a full workup so cost and agreement are comparable.</div>
+    </div>
+    <div class="grid3" id="genCards"></div>
+    <div class="footer">Single LLM = paper's minimal-prompt control · MAI-DxO = five-physician virtual panel (Nori et al. 2025) · Ours = Quadruple-Aim advocates + coordinator.</div>
+  </section>
+
+  <!-- 3. COMPARE --------------------------------------------------------- -->
+  <section class="tab" data-tab="cmp">
+    <div class="panel"><h2>Stage 02 · Compare vs what was actually ordered</h2>
+      <div class="lead">Ground truth = the tests present in the case record. Agreement = Jaccard overlap of the ordered-test sets, plus a same-final-diagnosis flag.</div>
+      <div id="cmpActual" class="vignette"></div>
+      <div id="cmpTable"></div>
+    </div>
+    <div class="panel" id="cmpTakeaway"></div>
+  </section>
+
+  <!-- 4. SCORING --------------------------------------------------------- -->
+  <section class="tab" data-tab="score">
+    <div class="panel"><h2>Stage 03 · Appropriateness &amp; harm scoring</h2>
+      <div class="lead">A clinician grades recommendations against the rubric (RAND/UCLA appropriateness 1–9; Judge 1–5) and the console shows agreement with the automated scorer. Reused console embedded below.</div>
+    </div>
+    <iframe class="embed" id="scoreFrame" title="Expert review console"></iframe>
+  </section>
+
+  <!-- 5. INTERFACE ------------------------------------------------------- -->
+  <section class="tab" data-tab="iface">
+    <div class="panel"><h2>Stage 04 · Delivery interface &amp; clinician response</h2>
+      <div class="lead">Deliver a recommendation via one of five actions; the simulated clinician accepts or dismisses with alert fatigue — p(accept) decays as the same alert repeats. Reused workspace embedded below.</div>
+    </div>
+    <iframe class="embed" id="ifaceFrame" title="Clinician workspace"></iframe>
+  </section>
+
+  <!-- 6. POLICY ---------------------------------------------------------- -->
+  <section class="tab" data-tab="policy">
+    <div class="panel"><h2>Stage 05 · Adaptive delivery policy</h2>
+      <div class="lead">Pre-computed over a 400-recommendation stream (one patient can't train a bandit). The policy chooses how to deliver each scored rec to realise clinical value without overloading the clinician.</div>
+      <div class="legend" id="polLegend"></div>
+      <svg class="chart" id="polChart" viewBox="0 0 760 300" preserveAspectRatio="none"></svg>
+      <div class="footer">Cumulative reward over the stream. Always-interrupt collapses under fatigue; never-alert wastes value; adaptive policies recover most of the value at far fewer interrupts.</div>
+    </div>
+    <div class="grid2">
+      <div class="panel"><h2>Outcome metrics</h2><div id="polTable"></div></div>
+      <div class="panel">
+        <h2>The reward it maximises (per rec)</h2>
+        <div style="font-size:13px">
+          <p style="margin:.2em 0">delivered <b>and</b> acted on → <span class="ok">+ clinical value</span> (signed; a harmful test scores negative)</p>
+          <p style="margin:.2em 0">delivered (any action) → <span class="no">− attention cost</span> of that action</p>
+          <p style="margin:.2em 0"><b>suppress</b> → <span class="no">− value withheld</span></p>
+          <p style="margin:.6em 0 0;color:var(--muted)">Value comes from the appropriateness/harm <b>score</b>, not from whether the clinician clicked accept — it optimises appropriate uptake, not engagement. The policy sees only a noisy appropriateness estimate.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="../data/cases.js"></script>
+<script src="../data/generation.js"></script>
+<script src="../data/policy.js"></script>
+<script>
+/* ====================== shared state + tabs ========================= */
+const TABS = [
+  {id:"case",   label:"Case"},
+  {id:"env",    label:"Environment"},
+  {id:"gen",    label:"Generation"},
+  {id:"cmp",    label:"Compare"},
+  {id:"score",  label:"Scoring"},
+  {id:"iface",  label:"Interface"},
+  {id:"policy", label:"Policy"},
+];
+const STATE = {caseKey:null, c:null};
+
+function buildTabs(){
+  const bar=document.getElementById("tabbar");
+  TABS.forEach((t,i)=>{
+    const b=document.createElement("button");
+    b.innerHTML=`<span class="n">${i}</span>${t.label}`;
+    b.dataset.tab=t.id;
+    if(i>0) b.disabled=true;               // locked until a case is picked
+    b.onclick=()=>showTab(t.id);
+    bar.appendChild(b);
+  });
+}
+function showTab(id){
+  document.querySelectorAll("section.tab").forEach(s=>s.classList.toggle("on",s.dataset.tab===id));
+  document.querySelectorAll("#tabbar button").forEach(b=>b.classList.toggle("on",b.dataset.tab===id));
+  if(id==="policy") drawPolicy();
+}
+function unlockTabs(){document.querySelectorAll("#tabbar button").forEach(b=>b.disabled=false);}
+
+/* ====================== case picker ================================= */
+function drawRandom(){ pickCase(Math.random()<0.5?"ehr":"cpc"); }
+
+function pickCase(key){
+  STATE.caseKey=key; STATE.c=window.DEMO_CASES[key];
+  const c=STATE.c;
+  document.getElementById("pickEhr").classList.toggle("on",key==="ehr");
+  document.getElementById("pickCpc").classList.toggle("on",key==="cpc");
+  // patient banner
+  document.getElementById("ptBanner").innerHTML=`<b>${c.patientDesc}</b> · ${c.title}`;
+  document.getElementById("ptBadge").textContent=c.id;
+  // abstract panel
+  document.getElementById("caseAbstract").innerHTML=
+    `<h2>Selected case · ${c.id}</h2>`+
+    `<div class="tag">${c.source}</div>`+
+    `<div class="vignette" style="margin-top:8px">${c.abstract}</div>`+
+    `<div style="font-size:13px"><b>Ground-truth diagnosis</b> (held back): ${c.trueDiagnosis}<br>`+
+    `<b>Key confirmatory tests:</b> ${c.keyTests.join(", ")}</div>`;
+  renderRecord(c);
+  unlockTabs();
+  resetEnvironment();
+  renderGeneration();
+  renderCompare();
+  syncFrames();
+  showTab("case");
+}
+
+function renderRecord(c){
+  const el=document.getElementById("caseRecord");
+  let h=`<h2>What the Gatekeeper holds (hidden from the agent)</h2>`;
+  if(c.record.kind==="tables"){
+    c.record.tables.forEach(t=>{
+      h+=`<div class="tag">${t.name}${t.hidden?' <span class="hide">· hidden</span>':''}</div>`;
+      h+=`<table>`+t.rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")+`</table>`;
+    });
+  } else {
+    h+=`<div style="font-size:13px">${c.record.text}</div>`+
+       `<div class="hide" style="margin-top:8px">${c.record.hidden}</div>`;
+  }
+  el.innerHTML=h;
+}
+
+/* ====================== Stage 01 gatekeeper ========================= */
+const VISIT_COST=5, OFFLIST_COST=50;
+let gk={cost:0, log:[]};
+
+function resetEnvironment(){
+  gk={cost:0, log:[]};
+  document.getElementById("envAbstract").textContent=STATE.c.abstract;
+  document.getElementById("envCost").textContent="0";
+  document.getElementById("envDx").value="";
+  document.getElementById("envInput").value="";
+  document.getElementById("envMode").value="ask";
+  const v=document.getElementById("envVerdict"); v.className="verdict"; v.textContent="";
+  document.getElementById("envLog").innerHTML='<li class="mut">No findings revealed yet.</li>';
+  // quick buttons: the case's key tests + a generic history ask
+  const q=document.getElementById("envQuick"); q.innerHTML="";
+  STATE.c.keyTests.forEach(t=>{
+    const b=document.createElement("button"); b.className="btn ghost"; b.style.padding="4px 10px"; b.style.fontSize="12px";
+    b.textContent="Order "+t; b.onclick=()=>{document.getElementById("envInput").value=t;document.getElementById("envMode").value="test";gkSubmit();};
+    q.appendChild(b);
+  });
+}
+
+function gkAddLog(html,cost,cls){
+  const log=document.getElementById("envLog");
+  if(log.firstChild&&log.firstChild.classList&&log.firstChild.classList.contains("mut")) log.innerHTML="";
+  const li=document.createElement("li"); if(cls)li.className=cls;
+  li.innerHTML=html+(cost!=null?`<span class="cost">+$${cost}</span>`:"");
+  log.prepend(li);
+}
+function gkBump(cost){gk.cost+=cost;document.getElementById("envCost").textContent=gk.cost.toFixed(0);}
+
+function gkSubmit(){
+  const inp=document.getElementById("envInput"); const text=inp.value.trim(); if(!text)return;
+  const mode=document.getElementById("envMode").value; const q=text.toLowerCase();
+  if(mode==="ask"){
+    const hit=STATE.c.history.find(h=>h.keywords.some(k=>q.includes(k)));
+    gkBump(VISIT_COST);
+    if(hit) gkAddLog(`<span class="q">Q: ${text}</span><br>${hit.answer}`,VISIT_COST);
+    else    gkAddLog(`<span class="q">Q: ${text}</span><br><span class="mut">Nothing pertinent on that line of questioning.</span>`,VISIT_COST,"norm");
+  } else {
+    const t=STATE.c.tests.find(t=>{
+      const names=[t.name.toLowerCase(),...(t.aliases||[])];
+      return names.some(n=>q.includes(n)||n.includes(q));
+    });
+    if(t){gkBump(t.cost); gkAddLog(`<span class="q">Test: ${t.name}</span><br>${t.result}`,t.cost);}
+    else {gkBump(OFFLIST_COST); gkAddLog(`<span class="q">Test: ${text}</span><br><span class="mut">Result within normal limits (synthesised off-record).</span>`,OFFLIST_COST,"norm");}
+  }
+  inp.value="";
+}
+
+function gkDiagnose(){
+  const guess=document.getElementById("envDx").value.trim(); if(!guess)return;
+  const truth=STATE.c.trueDiagnosis.toLowerCase();
+  const g=guess.toLowerCase();
+  // lenient match: share a salient keyword from the true dx
+  const keys=truth.replace(/[^a-z ]/g,"").split(" ").filter(w=>w.length>4);
+  const correct=keys.some(k=>g.includes(k))|| g.includes(truth)||truth.includes(g);
+  const v=document.getElementById("envVerdict");
+  v.className="verdict show "+(correct?"good":"bad");
+  v.innerHTML=(correct?"✓ CORRECT":"✗ INCORRECT")+
+    ` — you committed “${guess}”. Ground truth: <b>${STATE.c.trueDiagnosis}</b>. Total cost $${gk.cost.toFixed(0)}.`;
+  gkAddLog(`<span class="q">Diagnosis: ${guess}</span> → <b class="${correct?'ok':'no'}">${correct?'CORRECT':'INCORRECT'}</b>`,null);
+}
+
+/* ====================== Stage 02 generation ======================== */
+function totalCost(cfg){return cfg.tests.reduce((s,t)=>s+t.cost,0);}
+function valChip(v){return v==="high"?'<span class="chip good">high value</span>':v==="harm"?'<span class="chip harm">harmful</span>':'<span class="chip low">low value</span>';}
+
+function renderGeneration(){
+  const g=window.DEMO_GENERATION[STATE.caseKey];
+  const wrap=document.getElementById("genCards"); wrap.innerHTML="";
+  g.configs.forEach(cfg=>{
+    const card=document.createElement("div"); card.className="cfg"+(cfg.id==="ours"?" ours":"");
+    card.innerHTML=
+      `<div class="name">${cfg.label}</div>`+
+      `<div class="panelLbl">${cfg.panel}</div>`+
+      `<div class="blurb">${cfg.blurb}</div>`+
+      `<ul>`+cfg.tests.map(t=>`<li><span>${t.name} ${valChip(t.value)}</span><span class="mut">$${t.cost}</span></li>`).join("")+`</ul>`+
+      `<div class="tot"><span>Total workup</span><span>$${totalCost(cfg)}</span></div>`+
+      `<div class="dx"><span class="mut">Final dx:</span> <b>${cfg.diagnosis}</b></div>`;
+    wrap.appendChild(card);
+  });
+}
+
+/* ====================== Stage 02 compare =========================== */
+function jaccard(a,b){
+  const A=new Set(a),B=new Set(b); let inter=0;
+  A.forEach(x=>{if(B.has(x))inter++;});
+  const uni=new Set([...a,...b]).size;
+  return uni?inter/uni:0;
+}
+function renderCompare(){
+  const g=window.DEMO_GENERATION[STATE.caseKey];
+  const actual=g.actual;
+  document.getElementById("cmpActual").innerHTML=
+    `<b>Actually ordered (ground truth):</b> ${actual.join(", ")} &nbsp;·&nbsp; <b>Final dx:</b> ${g.actualDx}`;
+  let rows=`<table><tr><th>Config</th><th>Workup</th><th>Overlap</th><th>Extra (over-ordered)</th><th>Missed</th><th class="num">Cost</th><th class="num">Jaccard</th><th>Same dx?</th></tr>`;
+  g.configs.forEach(cfg=>{
+    const set=cfg.tests.map(t=>t.name);
+    const overlap=set.filter(t=>actual.includes(t));
+    const extra=set.filter(t=>!actual.includes(t));
+    const missed=actual.filter(t=>!set.includes(t));
+    const j=jaccard(set,actual);
+    const sameDx=cfg.diagnosis.toLowerCase()===g.actualDx.toLowerCase();
+    rows+=`<tr${cfg.id==="ours"?' style="background:#f3f9f5"':''}>`+
+      `<td><b>${cfg.label}</b></td>`+
+      `<td>${set.length} tests</td>`+
+      `<td class="ok">${overlap.length?overlap.join(", "):"—"}</td>`+
+      `<td class="${extra.length?'no':'mut'}">${extra.length?extra.join(", "):"none"}</td>`+
+      `<td class="${missed.length?'no':'mut'}">${missed.length?missed.join(", "):"none"}</td>`+
+      `<td class="num">$${totalCost(cfg)}</td>`+
+      `<td class="num"><b>${j.toFixed(2)}</b></td>`+
+      `<td>${sameDx?'<span class="ok">✓</span>':'<span class="no">✗</span>'}</td></tr>`;
+  });
+  rows+=`</table>`;
+  document.getElementById("cmpTable").innerHTML=rows;
+  // takeaway: ours vs maidxo
+  const ours=g.configs.find(c=>c.id==="ours"), mai=g.configs.find(c=>c.id==="maidxo");
+  const dropped=mai.tests.map(t=>t.name).filter(t=>!ours.tests.map(x=>x.name).includes(t));
+  const save=totalCost(mai)-totalCost(ours);
+  document.getElementById("cmpTakeaway").innerHTML=
+    `<h2>Takeaway</h2><div style="font-size:13.5px">`+
+    `<b>Ours</b> reaches the <b>same diagnosis</b> as the MAI-DxO panel (${ours.diagnosis}) but drops `+
+    `<b>${dropped.join(", ")||"a redundant test"}</b> — a low-value / higher-burden order — for `+
+    `<span class="ok">$${save} less</span> ($${totalCost(ours)} vs $${totalCost(mai)}) and a higher agreement with what was actually ordered.</div>`;
+}
+
+/* ====================== reused-mockup iframes ====================== */
+function syncFrames(){
+  const k=STATE.caseKey;
+  document.getElementById("scoreFrame").src="annotation_console.html?case="+k;
+  document.getElementById("ifaceFrame").src="clinician_ui.html?case="+k;
+}
+
+/* ====================== Stage 05 policy chart ===================== */
+const POL_COLORS={"always-interrupt":"#b3322c","never-alert":"#8a8f96","threshold":"#b07a16","LinUCB (bandit)":"#2c6fb3","Q-learning (MDP)":"#2e7d4f"};
+let polDrawn=false;
+function drawPolicy(){
+  if(polDrawn)return; polDrawn=true;
+  const D=window.DEMO_POLICY, names=Object.keys(D);
+  // chart bounds
+  let lo=Infinity,hi=-Infinity,maxLen=0;
+  names.forEach(n=>{D[n].curve.forEach(v=>{lo=Math.min(lo,v);hi=Math.max(hi,v);});maxLen=Math.max(maxLen,D[n].curve.length);});
+  const W=760,H=300,pad=34;
+  const X=i=>pad+(W-2*pad)*i/(maxLen-1);
+  const Y=v=>H-pad-(H-2*pad)*(v-lo)/(hi-lo);
+  const svg=document.getElementById("polChart"); let s="";
+  // zero line
+  if(lo<0&&hi>0){const y0=Y(0);s+=`<line x1="${pad}" y1="${y0}" x2="${W-pad}" y2="${y0}" stroke="#dbe1e7" stroke-dasharray="4 4"/>`;}
+  // axes
+  s+=`<line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#c7ced5"/>`;
+  s+=`<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#c7ced5"/>`;
+  s+=`<text x="${pad}" y="${pad-10}" font-size="11" fill="#69757f">cumulative reward</text>`;
+  s+=`<text x="${W-pad}" y="${H-pad+22}" font-size="11" fill="#69757f" text-anchor="end">recommendations →</text>`;
+  s+=`<text x="${pad-6}" y="${Y(hi)+4}" font-size="11" fill="#69757f" text-anchor="end">${hi.toFixed(0)}</text>`;
+  s+=`<text x="${pad-6}" y="${Y(lo)+4}" font-size="11" fill="#69757f" text-anchor="end">${lo.toFixed(0)}</text>`;
+  names.forEach(n=>{
+    const pts=D[n].curve.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+    s+=`<polyline points="${pts}" fill="none" stroke="${POL_COLORS[n]}" stroke-width="2.2"/>`;
+  });
+  svg.innerHTML=s;
+  // legend
+  document.getElementById("polLegend").innerHTML=names.map(n=>`<span><i style="background:${POL_COLORS[n]}"></i>${n}</span>`).join("");
+  // table
+  let t=`<table><tr><th>Policy</th><th class="num">Reward</th><th class="num">Realised value</th><th class="num">Safety-miss</th><th class="num">Interrupt %</th></tr>`;
+  names.forEach(n=>{const r=D[n];const win=n==="Q-learning (MDP)"||n==="LinUCB (bandit)"||n==="threshold";
+    t+=`<tr${win?' style="background:#f3f9f5"':''}><td>${n}</td><td class="num">${r.reward}</td><td class="num">${r.realized}</td><td class="num">${r.safety_miss}</td><td class="num">${r.interrupt}%</td></tr>`;});
+  t+=`</table>`;
+  document.getElementById("polTable").innerHTML=t;
+}
+
+/* ====================== boot ====================== */
+buildTabs();
+// Deep-link: ?case=ehr|cpc auto-picks a case; &tab=<id> opens a tab. Used for the
+// deck screenshots and for sharing a specific stage.
+(function(){
+  const p=new URLSearchParams(location.search);
+  const ck=p.get("case");
+  if(ck==="ehr"||ck==="cpc"){
+    pickCase(ck);
+    const tb=p.get("tab");
+    if(tb&&TABS.some(t=>t.id===tb)) showTab(tb);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Expert Review Console - Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f4f6f8;--panel:#fff;--ink:#28323b;--muted:#69757f;--line:#dbe1e7;
+        --blue:#2c6fb3;--blue-d:#1b4f82;--green:#2e7d4f;--red:#b3322c;--chip:#eef1f4;--amber:#b07a16}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.55 "Work Sans","Avenir Next",ui-sans-serif,-apple-system,Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+  .mockup-banner{background:#222;color:#fff;text-align:center;padding:6px;font-size:12px}
+  .mockup-banner b{color:#ffd24a}
+  .nav{font-size:12px;padding:6px 20px;background:#eef1f4;border-bottom:1px solid var(--line)}
+  .nav a{color:var(--blue-d);text-decoration:none;margin-right:14px}
+  header.app{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
+  header.app .title{font-weight:700}
+  header.app .who{color:var(--muted);font-size:13px}
+  .wrap{max-width:900px;margin:18px auto;padding:0 16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+  .panel h2{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tabs button{padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;font-weight:600;color:var(--muted)}
+  .tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .vignette{background:#f7fafd;border-left:4px solid var(--blue);padding:10px 12px;border-radius:6px;margin:10px 0}
+  .q{font-weight:700;margin:12px 0 4px}
+  .scale{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .scale button{width:42px;height:42px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;font-weight:700}
+  .scale button:hover{border-color:var(--blue)}
+  .scale button.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .scalekey{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);max-width:430px}
+  .rubric{font-size:12.5px;color:var(--muted);margin:6px 0}
+  .rubric b{color:var(--ink)}
+  .btn{margin-top:14px;padding:9px 16px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:600;cursor:pointer}
+  .btn:disabled{background:#b9c4cd;cursor:not-allowed}
+  .feedback{margin-top:12px;padding:10px 12px;border-radius:8px;background:#eef1f4;font-size:13px;display:none}
+  .feedback.show{display:block}
+  .agree{color:var(--green);font-weight:600} .disagree{color:var(--amber);font-weight:600}
+  .prog{font-size:12px;color:var(--muted)}
+  .hidden{display:none}
+  .footer{max-width:900px;margin:8px auto 30px;padding:0 16px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="mockup-banner"><b>MOCKUP</b> &nbsp;Illustrative only. Expert review console for validating the automated scorers (Stages 03 and 06).</div>
+<div class="nav"><a href="index.html">&larr; All mockups</a><a href="recommendation_review.html">Recommendation review</a><a href="clinician_ui.html">Delivery</a></div>
+<header class="app">
+  <div class="title">Expert Review Console</div>
+  <div class="who">Reviewer R3 &middot; <span class="prog" id="prog"></span></div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button id="tabA" class="on" onclick="setTask('appr')">Appropriateness (RAND/UCLA 1-9)</button>
+    <button id="tabB" onclick="setTask('dx')">Diagnosis grade (Judge 1-5)</button>
+  </div>
+
+  <!-- Appropriateness task -->
+  <div id="taskAppr" class="panel">
+    <h2>Rate test appropriateness</h2>
+    <div class="vignette" id="apprCase"></div>
+    <div class="q" id="apprTest"></div>
+    <div class="rubric"><b>1-3</b> inappropriate (harm &ge; benefit) &middot; <b>4-6</b> uncertain &middot; <b>7-9</b> appropriate (benefit &gt; harm)</div>
+    <div class="scale" id="apprScale"></div>
+    <div class="scalekey" style="max-width:430px"><span>inappropriate</span><span>uncertain</span><span>appropriate</span></div>
+    <button class="btn" id="apprSubmit" disabled onclick="submit('appr')">Submit rating</button>
+    <div class="feedback" id="apprFb"></div>
+  </div>
+
+  <!-- Diagnosis task -->
+  <div id="taskDx" class="panel hidden">
+    <h2>Grade the proposed diagnosis vs ground truth</h2>
+    <div class="vignette" id="dxCase"></div>
+    <div class="q" id="dxProposed"></div>
+    <div class="rubric">
+      <b>5</b> perfect/superior &middot; <b>4</b> mostly correct (minor) &middot; <b>3</b> partial (major error) &middot;
+      <b>2</b> largely incorrect &middot; <b>1</b> completely incorrect. &nbsp;Threshold for "correct" is &ge; 4.
+    </div>
+    <div class="scale" id="dxScale"></div>
+    <button class="btn" id="dxSubmit" disabled onclick="submit('dx')">Submit grade</button>
+    <div class="feedback" id="dxFb"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Why this exists</h2>
+    <div style="font-size:13px;color:var(--muted)">
+      The automated appropriateness scorer (Stage 03) and the LLM Judge (Stage 06) must be
+      calibrated against a physician panel before their scores can drive the reward or be reported.
+      This console collects those human labels and tracks agreement with the automated score.
+    </div>
+  </div>
+</div>
+
+<div class="footer">All cases, scores, and "model" values are hard-coded for illustration and will be replaced by real review queues during implementation.</div>
+
+<script>
+// Queues are keyed by case so the console reflects the patient picked in pipeline.html
+// (?case=ehr|cpc). The picked case's items lead; the other case follows for context.
+const APPR_BY = {
+  ehr: [
+    {case:"52 y/o, pleuritic chest pain and dyspnea after a long-haul flight; D-dimer elevated.",
+     test:"CT pulmonary angiogram", model:8},
+    {case:"52 y/o PE workup; D-dimer already resulted and elevated this visit.",
+     test:"Repeat D-Dimer", model:2}
+  ],
+  cpc: [
+    {case:"41 y/o with IVDU, fevers and a new murmur; high pretest probability of endocarditis.",
+     test:"Transesophageal echocardiogram", model:8},
+    {case:"41 y/o, same presentation; planning to proceed directly to TEE.",
+     test:"Transthoracic echocardiogram (first)", model:3}
+  ]
+};
+const DX_BY = {
+  ehr: [
+    {case:"52 y/o with pleuritic chest pain; CT pulmonary angiogram shows a segmental filling defect.",
+     proposed:"Acute pulmonary embolism", truth:"Other pulmonary embolism without acute cor pulmonale", model:5}
+  ],
+  cpc: [
+    {case:"41 y/o, IVDU, MSSA bacteremia x3 and a tricuspid vegetation on TEE.",
+     proposed:"Infective endocarditis", truth:"Infective endocarditis", model:5}
+  ]
+};
+const _caseKey = (new URLSearchParams(location.search).get('case')) || 'ehr';
+const _other = _caseKey==='cpc' ? 'ehr' : 'cpc';
+const APPR = [...(APPR_BY[_caseKey]||APPR_BY.ehr), ...(APPR_BY[_other]||[])];
+const DX   = [...(DX_BY[_caseKey]||DX_BY.ehr),   ...(DX_BY[_other]||[])];
+let task="appr", iA=0, iD=0, selA=null, selD=null, done=0;
+const total = APPR.length + DX.length;
+
+function buildScale(id, n, onPick){
+  const el=document.getElementById(id); el.innerHTML="";
+  for(let i=1;i<=n;i++){const b=document.createElement("button");b.textContent=i;
+    b.onclick=()=>{[...el.children].forEach(c=>c.classList.remove("sel"));b.classList.add("sel");onPick(i);};
+    el.appendChild(b);}
+}
+function setTask(t){
+  task=t;
+  document.getElementById("tabA").classList.toggle("on",t==="appr");
+  document.getElementById("tabB").classList.toggle("on",t==="dx");
+  document.getElementById("taskAppr").classList.toggle("hidden",t!=="appr");
+  document.getElementById("taskDx").classList.toggle("hidden",t!=="dx");
+}
+function loadAppr(){
+  if(iA>=APPR.length){document.getElementById("apprCase").textContent="No more appropriateness items in this queue.";
+    document.getElementById("apprTest").textContent="";document.getElementById("apprSubmit").disabled=true;return;}
+  const it=APPR[iA];selA=null;
+  document.getElementById("apprCase").textContent=it.case;
+  document.getElementById("apprTest").textContent="Proposed test:  "+it.test;
+  document.getElementById("apprFb").classList.remove("show");
+  document.getElementById("apprSubmit").disabled=true;
+  buildScale("apprScale",9,v=>{selA=v;document.getElementById("apprSubmit").disabled=false;});
+}
+function loadDx(){
+  if(iD>=DX.length){document.getElementById("dxCase").textContent="No more diagnosis items in this queue.";
+    document.getElementById("dxProposed").textContent="";document.getElementById("dxSubmit").disabled=true;return;}
+  const it=DX[iD];selD=null;
+  document.getElementById("dxCase").textContent=it.case;
+  document.getElementById("dxProposed").innerHTML="Proposed:  <b>"+it.proposed+"</b><br><span style='color:#69757f'>Ground truth: "+it.truth+"</span>";
+  document.getElementById("dxFb").classList.remove("show");
+  document.getElementById("dxSubmit").disabled=true;
+  buildScale("dxScale",5,v=>{selD=v;document.getElementById("dxSubmit").disabled=false;});
+}
+function submit(t){
+  if(t==="appr"){
+    const it=APPR[iA], fb=document.getElementById("apprFb");
+    const agree=Math.abs(selA-it.model)<=1;
+    fb.innerHTML=`You: <b>${selA}</b> &middot; automated scorer: <b>${it.model}</b> &middot; `+
+      (agree?`<span class="agree">agreement</span>`:`<span class="disagree">disagreement (flagged for adjudication)</span>`);
+    fb.classList.add("show");iA++;done++;tick();setTimeout(loadAppr,1100);
+  } else {
+    const it=DX[iD], fb=document.getElementById("dxFb");
+    const agree=(selD>=4)===(it.model>=4);
+    fb.innerHTML=`You: <b>${selD}</b> &middot; Judge: <b>${it.model}</b> &middot; `+
+      (agree?`<span class="agree">same correct/incorrect call</span>`:`<span class="disagree">disagreement (flagged)</span>`);
+    fb.classList.add("show");iD++;done++;tick();setTimeout(loadDx,1100);
+  }
+}
+function tick(){document.getElementById("prog").textContent=`reviewed ${done} / ${total}`;}
+buildScale("apprScale",9,()=>{});buildScale("dxScale",5,()=>{});
+loadAppr();loadDx();tick();
+</script>
+</body>
+</html>

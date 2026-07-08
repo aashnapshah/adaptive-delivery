@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recommendation Review - Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f4f6f8;--panel:#fff;--ink:#28323b;--muted:#69757f;--line:#dbe1e7;
+        --blue:#2c6fb3;--blue-d:#1b4f82;--green:#2e7d4f;--red:#b3322c;--chip:#eef1f4;--amber:#b07a16}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.55 "Work Sans","Avenir Next",ui-sans-serif,-apple-system,Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+  .mockup-banner{background:#222;color:#fff;text-align:center;padding:6px;font-size:12px}
+  .mockup-banner b{color:#ffd24a}
+  .nav{font-size:12px;padding:6px 20px;background:#eef1f4;border-bottom:1px solid var(--line)}
+  .nav a{color:var(--blue-d);text-decoration:none;margin-right:14px}
+  header.app{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px}
+  header.app .title{font-weight:700}
+  .wrap{max-width:960px;margin:18px auto;padding:0 16px;display:grid;grid-template-columns:1fr 300px;gap:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .vignette{background:#f7fafd;border-left:4px solid var(--blue);padding:10px 12px;border-radius:6px;margin-bottom:12px}
+  .cand{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+  .cand.out{opacity:.5;background:#f7f8f9}
+  .cand .name{font-weight:600}
+  .cand .why{font-size:12px;color:var(--muted)}
+  .cand .toggle{padding:6px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;cursor:pointer;font-weight:600;white-space:nowrap}
+  .cand .toggle.keep{border-color:#bfe0cd;color:var(--green)}
+  .cand .toggle.drop{border-color:#eccfcc;color:var(--red)}
+  .add{display:flex;gap:8px;margin-top:10px}
+  .add input{flex:1;padding:8px;border:1px solid var(--line);border-radius:8px}
+  .add button,.btn{padding:8px 14px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:600;cursor:pointer}
+  .advocate{font-size:12.5px;padding:8px 10px;border-radius:8px;background:var(--chip);margin-bottom:8px}
+  .advocate b{display:block;color:var(--ink)}
+  .out-list{font-size:13px}
+  .out-list li{margin-bottom:4px}
+  .footer{max-width:960px;margin:8px auto 30px;padding:0 16px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="mockup-banner"><b>MOCKUP</b> &nbsp;Illustrative only. Clinician review of the generated candidate test list (Stage 02), before scoring.</div>
+<div class="nav"><a href="index.html">&larr; All mockups</a><a href="annotation_console.html">Expert review</a><a href="clinician_ui.html">Delivery</a></div>
+<header class="app"><div class="title">Recommendation Review</div></header>
+
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <h2>Patient</h2>
+      <div class="vignette">55 y/o presenting with three months of fatigue and no red-flag symptoms. Primary care visit.</div>
+      <h2>Coordinator's ranked candidate tests</h2>
+      <div id="cands"></div>
+      <div class="add">
+        <input id="addBox" placeholder="Add a test the panel missed (e.g., Vitamin D)" />
+        <button onclick="addTest()">Add</button>
+      </div>
+      <button class="btn" style="margin-top:14px" onclick="submitList()">Approve list &rarr; send to scoring</button>
+      <div id="result" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>Quadruple-Aim advocates</h2>
+      <div class="advocate"><b>Patient outcomes</b>Broad panel: CBC, HbA1c, TSH, ferritin.</div>
+      <div class="advocate"><b>Cost / stewardship</b>Drop TSH and ferritin (normal 6 weeks ago); reject CT abdomen/pelvis as unindicated.</div>
+      <div class="advocate"><b>Patient experience</b>Consolidate remaining tests into a single blood draw.</div>
+      <div class="advocate"><b>Clinician workload</b>Place as one compact order action.</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Candidate list and advocate positions are hard-coded to mirror the plan's worked example; in the real system these come from the multi-agent recommender.</div>
+
+<script>
+let cands=[
+  {name:"Complete blood count", why:"Outcomes: screen for anemia behind the fatigue", keep:true},
+  {name:"HbA1c", why:"Outcomes: screen for diabetes", keep:true},
+  {name:"Thyroid-stimulating hormone", why:"Stewardship: normal 6 weeks ago, low yield", keep:false},
+  {name:"Ferritin", why:"Stewardship: normal 6 weeks ago, duplicative", keep:false},
+  {name:"CT abdomen/pelvis", why:"Stewardship: unindicated, radiation + cost", keep:false}
+];
+function render(){
+  const el=document.getElementById("cands");el.innerHTML="";
+  cands.forEach((c,i)=>{
+    const row=document.createElement("div");row.className="cand"+(c.keep?"":" out");
+    row.innerHTML=`<div><div class="name">${c.name}</div><div class="why">${c.why}</div></div>`;
+    const b=document.createElement("button");
+    b.className="toggle "+(c.keep?"keep":"drop");b.textContent=c.keep?"Keep":"Dropped";
+    b.onclick=()=>{cands[i].keep=!cands[i].keep;render();};
+    row.appendChild(b);el.appendChild(row);
+  });
+}
+function addTest(){
+  const v=document.getElementById("addBox").value.trim();
+  if(!v)return;cands.push({name:v,why:"Added by reviewing clinician",keep:true});
+  document.getElementById("addBox").value="";render();
+}
+function submitList(){
+  const kept=cands.filter(c=>c.keep).map(c=>c.name);
+  document.getElementById("result").innerHTML=
+    `<div style="padding:10px 12px;border-radius:8px;background:#e4f2ea;color:#2e7d4f">`+
+    `Sent to scoring (${kept.length}): <b>${kept.join(", ")||"none"}</b></div>`;
+}
+render();
+</script>
+</body>
+</html>

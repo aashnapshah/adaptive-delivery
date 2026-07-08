@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Adaptive Alert Delivery - Clinician UI Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#f4f6f8; --panel:#ffffff; --ink:#28323b; --muted:#69757f;
+    --line:#dbe1e7; --blue:#2c6fb3; --blue-d:#1b4f82; --green:#2e7d4f;
+    --amber:#b07a16; --red:#b3322c; --chip:#eef1f4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.55 "Work Sans","Avenir Next",ui-sans-serif,-apple-system,Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+  .mockup-banner{background:#222;color:#fff;text-align:center;padding:6px;font-size:12px;letter-spacing:.04em}
+  .mockup-banner b{color:#ffd24a}
+  header.app{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px;
+             display:flex;justify-content:space-between;align-items:center}
+  header.app .title{font-weight:700}
+  header.app .who{color:var(--muted);font-size:13px}
+  .wrap{max-width:1080px;margin:18px auto;padding:0 16px;display:grid;
+        grid-template-columns:1fr 320px;gap:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .pt-banner{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline}
+  .pt-banner .name{font-size:17px;font-weight:700}
+  .pt-banner .vit{color:var(--muted)}
+  .pt-banner .vit b{color:var(--ink)}
+  .orders{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+  .order-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f3f5}
+  .order-row .res{color:var(--muted)}
+  .controls label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+  select,button{font:inherit}
+  select{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .btn{display:inline-block;margin-top:12px;width:100%;padding:10px;border:0;border-radius:8px;
+       background:var(--blue);color:#fff;font-weight:600;cursor:pointer}
+  .btn:hover{background:var(--blue-d)}
+  .meter{height:10px;background:#eef1f4;border-radius:6px;overflow:hidden;margin-top:6px}
+  .meter > div{height:100%;background:linear-gradient(90deg,#3a9d63,#d8a72b,#c4453c);width:0;transition:width .3s}
+  .log{font-size:12.5px;max-height:210px;overflow:auto;margin:0;padding-left:0;list-style:none}
+  .log li{padding:6px 8px;border-radius:6px;margin-bottom:4px;background:var(--chip)}
+  .log .ok{color:var(--green)} .log .no{color:var(--red)} .log .mut{color:var(--muted)}
+
+  /* ---- the recommendation card (shared) ---- */
+  .rec{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}
+  .rec .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .rec .test{font-weight:700}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .chip{font-size:11.5px;padding:2px 8px;border-radius:20px;background:var(--chip);color:var(--ink)}
+  .chip.good{background:#e4f2ea;color:var(--green)}
+  .chip.harm{background:#f7e8e6;color:var(--red)}
+  .rec .why{color:var(--muted);font-size:13px}
+  .rec .acts{margin-top:10px;display:flex;gap:8px}
+  .rec .acts button{flex:1;padding:8px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600}
+  .rec .acts .accept{border-color:#bfe0cd;color:var(--green)}
+  .rec .acts .dismiss{border-color:#eccfcc;color:var(--red)}
+
+  /* interrupt = modal overlay */
+  .overlay{position:fixed;inset:0;background:rgba(20,28,36,.45);display:none;align-items:center;justify-content:center;z-index:50}
+  .overlay.show{display:flex}
+  .modal{width:440px;max-width:92vw;background:#fff;border-radius:12px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+  .modal .tag{font-size:11px;color:var(--red);font-weight:700;letter-spacing:.05em}
+
+  /* passive = inline banner */
+  .passive-slot .rec{border-left:4px solid var(--blue);background:#f7fafd}
+  /* delay = toast */
+  .toast{position:fixed;right:18px;bottom:18px;background:#28323b;color:#fff;padding:10px 14px;border-radius:8px;
+         display:none;z-index:40;font-size:13px}
+  .toast.show{display:block}
+  /* bundle highlight */
+  .bundle-note{font-size:12px;color:var(--amber);margin-bottom:6px}
+  .hint{color:var(--muted);font-size:12px;margin-top:4px}
+  .footer{max-width:1080px;margin:8px auto 30px;padding:0 16px;color:var(--muted);font-size:12px}
+  code{background:#eef1f4;padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="mockup-banner"><b>MOCKUP</b> &nbsp;Illustrative only, not a real clinical system. Demonstrates Stage 04 (delivery) of the research plan.</div>
+<div style="font-size:12px;padding:6px 20px;background:#eef1f4;border-bottom:1px solid var(--line)">
+  <a href="index.html" style="color:#1b4f82;text-decoration:none;margin-right:14px">&larr; All mockups</a>
+  <a href="recommendation_review.html" style="color:#1b4f82;text-decoration:none;margin-right:14px">Recommendation review</a>
+  <a href="annotation_console.html" style="color:#1b4f82;text-decoration:none">Expert review</a>
+</div>
+
+<header class="app">
+  <div class="title">ED Clinical Workspace</div>
+  <div class="who">Dr. A. Clinician &middot; Shift alert burden: <span id="burdenTxt">0.0</span></div>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: chart + where alerts land -->
+  <div>
+    <div class="panel">
+      <h2>Patient</h2>
+      <div class="pt-banner">
+        <span class="name" id="ptName">52 F &middot; PE-2180</span>
+        <span class="vit" id="ptVits"><b>HR</b> 110 &nbsp; <b>BP</b> 128/82 &nbsp; <b>SpO2</b> 91% &nbsp; <b>RR</b> 22</span>
+      </div>
+      <div class="hint" id="ptHint">Sudden pleuritic chest pain and dyspnea three days after a long-haul flight.</div>
+      <div class="orders" id="ptOrders">
+        <div class="order-row"><span>D-Dimer</span><span class="res">3.42 ug/mL (H)</span></div>
+        <div class="order-row"><span>Troponin T</span><span class="res">0.04 ng/mL (H)</span></div>
+        <div class="order-row"><span>CBC</span><span class="res">within normal limits</span></div>
+      </div>
+      <div class="hint" style="margin-top:10px">Passive and bundled alerts appear below:</div>
+      <div id="passiveSlot" class="passive-slot" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: demo controls + response log -->
+  <div>
+    <div class="panel controls">
+      <h2>Delivery (Stage 05 picks this)</h2>
+      <label>Recommendation</label>
+      <select id="recSel"></select>
+      <label>Presentation action</label>
+      <select id="actSel">
+        <option value="interrupt">Interrupt (modal)</option>
+        <option value="passive">Passive (inline note)</option>
+        <option value="bundle">Bundle (group related)</option>
+        <option value="delay">Delay (resurface later)</option>
+        <option value="suppress">Suppress (withhold)</option>
+      </select>
+      <button class="btn" onclick="deliver()">Deliver alert</button>
+      <div class="hint">Alert burden (alert fatigue)</div>
+      <div class="meter"><div id="burdenBar"></div></div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <h2>Response log</h2>
+      <ul id="log" class="log"><li class="mut">No alerts delivered yet.</li></ul>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  This page mirrors the demo: recommendations and scores come from Stages 02-03, the five
+  presentation actions from Stage 04, and which action is chosen would be decided by the
+  Stage 05 policy. Everything here is hard-coded for illustration and will be rebuilt on real
+  data and a real EHR during implementation.
+</div>
+
+<!-- interrupt modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalBody"></div>
+</div>
+<!-- delay toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// Two case profiles; ?case=ehr|cpc (from pipeline.html) selects one. Default = ehr/PE.
+const CASES = {
+  ehr: {
+    name:"52 F · PE-2180",
+    vits:"<b>HR</b> 110 &nbsp; <b>BP</b> 128/82 &nbsp; <b>SpO2</b> 91% &nbsp; <b>RR</b> 22",
+    hint:"Sudden pleuritic chest pain and dyspnea three days after a long-haul flight.",
+    orders:[["D-Dimer","3.42 ug/mL (H)"],["Troponin T","0.04 ng/mL (H)"],["CBC","within normal limits"]],
+    bundleWith:"Chest radiograph",
+    recs:{
+      ctpa:  {test:"CT pulmonary angiogram", appr:0.88, harm:0.87,
+              why:"Discriminates the leading differential (pulmonary embolism); high diagnostic yield.", value:"high"},
+      ddimer:{test:"Repeat D-Dimer", appr:0.05, harm:0.11,
+              why:"Already resulted this visit; duplicative and low yield.", value:"low"}
+    }
+  },
+  cpc: {
+    name:"41 M · CPC-EI-0041",
+    vits:"<b>T</b> 38.9 &nbsp; <b>HR</b> 116 &nbsp; <b>BP</b> 108/64 &nbsp; <b>SpO2</b> 96%",
+    hint:"Two weeks of fevers, night sweats and fatigue; injection drug use; new murmur.",
+    orders:[["Blood cultures","3/3 sets MSSA"],["CBC","WBC 14.2 (H), Hgb 10.8 (L)"],["ESR / CRP","88 mm/hr · 142 mg/L (H)"]],
+    bundleWith:"Repeat blood cultures",
+    recs:{
+      tee: {test:"Transesophageal echocardiogram", appr:0.86, harm:0.70,
+            why:"Definitive for the tricuspid vegetation given high pretest probability; high yield.", value:"high"},
+      tte: {test:"Transthoracic echocardiogram (first)", appr:0.30, harm:0.45,
+            why:"Lower-sensitivity first step; redundant when TEE is already indicated.", value:"low"}
+    }
+  }
+};
+const _caseKey = (new URLSearchParams(location.search).get('case')) || 'ehr';
+const CASE = CASES[_caseKey] || CASES.ehr;
+const RECS = CASE.recs;
+let burden = 0;
+
+function loadCase(){
+  document.getElementById('ptName').textContent = CASE.name;
+  document.getElementById('ptVits').innerHTML = CASE.vits;
+  document.getElementById('ptHint').textContent = CASE.hint;
+  document.getElementById('ptOrders').innerHTML =
+    CASE.orders.map(o=>`<div class="order-row"><span>${o[0]}</span><span class="res">${o[1]}</span></div>`).join('');
+  const sel=document.getElementById('recSel'); sel.innerHTML='';
+  Object.keys(RECS).forEach(k=>{
+    const o=document.createElement('option'); o.value=k;
+    o.textContent=`${RECS[k].test} (${RECS[k].value==='high'?'confirmatory':'low value'})`;
+    sel.appendChild(o);
+  });
+}
+
+function recCard(r, withActions){
+  const chips = `<div class="chips">
+      <span class="chip ${r.appr>=0.6?'good':''}">appropriateness ${r.appr.toFixed(2)}</span>
+      <span class="chip ${r.harm>=0.6?'harm':''}">harm/burden ${r.harm.toFixed(2)}</span>
+      <span class="chip">${r.value} value</span></div>`;
+  const acts = withActions ? `<div class="acts">
+      <button class="accept" onclick="respond('${r.test}',true)">Order it</button>
+      <button class="dismiss" onclick="respond('${r.test}',false)">Dismiss</button></div>` : "";
+  return `<div class="rec"><div class="top"><span class="test">${r.test}</span></div>
+      ${chips}<div class="why">${r.why}</div>${acts}</div>`;
+}
+
+function setBurden(v){
+  burden = Math.max(0, v);
+  document.getElementById('burdenTxt').textContent = burden.toFixed(1);
+  document.getElementById('burdenBar').style.width = Math.min(100, burden/6*100) + '%';
+}
+
+function logLine(html){
+  const log = document.getElementById('log');
+  if(log.firstChild && log.firstChild.classList && log.firstChild.classList.contains('mut')) log.innerHTML='';
+  const li = document.createElement('li'); li.innerHTML = html; log.prepend(li);
+}
+
+const BURDEN_ADD = {interrupt:1.0, passive:0.3, bundle:0.5, delay:0.5, suppress:0.0};
+
+function deliver(){
+  setBurden(burden*0.8);                         // time passes: fatigue recovers a little
+  const r = RECS[document.getElementById('recSel').value];
+  const act = document.getElementById('actSel').value;
+  document.getElementById('passiveSlot').innerHTML = "";   // clear previous inline alert
+
+  if(act==='suppress'){
+    logLine(`<span class="mut">SUPPRESSED &middot; ${r.test} withheld (kept off the screen)</span>`);
+    return;
+  }
+  setBurden(burden + BURDEN_ADD[act]);
+
+  if(act==='interrupt'){
+    document.getElementById('modalBody').innerHTML =
+      `<div class="tag">INTERRUPTIVE ALERT</div>` + recCard(r, true);
+    document.getElementById('overlay').classList.add('show');
+  } else if(act==='passive'){
+    document.getElementById('passiveSlot').innerHTML =
+      `<div class="hint">Passive recommendation:</div>` + recCard(r, true);
+  } else if(act==='bundle'){
+    const bundled = `<div class="rec"><div class="bundle-note">Bundled order set (1 alert, 2 items)</div>
+        <div class="top"><span class="test">${r.test}</span></div>
+        ${recCardChips(r)}
+        <div class="top" style="margin-top:8px"><span class="test">${CASE.bundleWith}</span></div>
+        <div class="why">Grouped to avoid a second interruption.</div>
+        <div class="acts"><button class="accept" onclick="respond('${r.test} (bundle)',true)">Order set</button>
+        <button class="dismiss" onclick="respond('${r.test} (bundle)',false)">Dismiss</button></div></div>`;
+    document.getElementById('passiveSlot').innerHTML = bundled;
+  } else if(act==='delay'){
+    const t = document.getElementById('toast');
+    t.textContent = `Snoozed: ${r.test} will resurface at a quieter moment.`;
+    t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2600);
+    logLine(`<span class="mut">DELAYED &middot; ${r.test} held for later</span>`);
+  }
+}
+
+function recCardChips(r){
+  return `<div class="chips">
+      <span class="chip ${r.appr>=0.6?'good':''}">appropriateness ${r.appr.toFixed(2)}</span>
+      <span class="chip ${r.harm>=0.6?'harm':''}">harm/burden ${r.harm.toFixed(2)}</span></div>`;
+}
+
+function respond(test, accepted){
+  document.getElementById('overlay').classList.remove('show');
+  if(accepted) logLine(`<span class="ok">ORDERED</span> &middot; ${test}`);
+  else logLine(`<span class="no">DISMISSED</span> &middot; ${test}`);
+}
+
+loadCase();
+setBurden(0);
+// allow ?auto=interrupt (etc.) to open a state on load, for screenshots
+const _auto = new URLSearchParams(location.search).get('auto');
+if(_auto){ document.getElementById('actSel').value = _auto; deliver(); }
+</script>
+</body>
+</html>

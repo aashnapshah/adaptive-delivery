@@ -1,0 +1,32 @@
+# ─── Secrets: NEVER commit ───────────────────────────────────────────────
+.env
+**/.env
+*.key
+
+# ─── Credentialed / copyrighted data: NEVER commit ───────────────────────
+# MIMIC-IV = PhysioNet credentialed data under a DUA (no public redistribution).
+# NEJM CPC cases = copyrighted. Transcripts + per-case ground truth derive from both.
+demo/data/
+**/recordings/
+*.db
+demo/results/per_case.csv
+
+# ─── macOS / Python / envs ───────────────────────────────────────────────
+.DS_Store
+._*
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+venv/
+.venv/
+node_modules/
+
+# ─── Original deck (embeds third-party paper figures) — kept local ───────
+slides/presentation-1.pptx
+
+# ─── Scratch render artifacts ────────────────────────────────────────────
+demo/_fig_*.html
+demo/_fig_*.png
+demo/_preview*
+demo/_report*
+slides/_slide_*.html

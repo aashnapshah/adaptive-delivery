@@ -1,0 +1,8 @@
+model,design,design_name,mode,n,accuracy,accuracy_ci95,judge,tokens,tokens_se,secs,secs_se,cost,cost_se,turns,turns_se,tests,tests_se,recall,recall_se,precision,precision_se
+llama3.1-8b,single,Single LLM,cpc,100,23.0,8.2,1.8,23059.3,441.595,64.893,1.462,1279.2,70.551,8.0,0.0,6.8,0.058,,,,
+llama3.1-8b,maidxo,Roles prompt,cpc,100,23.0,8.2,1.9,24720.12,455.125,55.946,1.558,1438.0,70.375,8.0,0.0,6.42,0.087,,,,
+llama3.1-8b,debate,Multi-agent,cpc,100,13.0,6.6,1.47,44885.77,2265.586,259.074,11.592,432.9,26.625,5.66,0.217,0.39,0.071,,,,
+qwen3-32b,single,Single LLM,cpc,5,60.0,42.9,3.6,21415.4,2988.75,202.068,55.713,1530.0,262.099,4.0,0.283,6.4,0.607,,,,
+qwen3-32b,maidxo,Roles prompt,cpc,5,40.0,42.9,3.0,21780.0,5379.037,244.516,85.176,1340.0,152.656,4.0,0.632,5.4,0.829,,,,
+qwen3-32b,single,Single LLM,mimic,5,0.0,0.0,1.4,17587.2,1159.634,198.874,25.474,374.0,49.039,4.0,0.0,8.2,0.522,0.565,0.043,0.367,0.062
+qwen3-32b,maidxo,Roles prompt,mimic,5,20.0,35.1,2.0,17816.4,577.56,209.096,11.136,384.0,79.579,4.4,0.358,8.2,0.438,0.659,0.054,0.4,0.069
