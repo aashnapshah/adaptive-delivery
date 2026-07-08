@@ -30,3 +30,11 @@ demo/_fig_*.png
 demo/_preview*
 demo/_report*
 slides/_slide_*.html
+
+# ─── Per-slide renders — keep only the combined deck (deck.pdf / deck.html) ─
+slides/slide-*.png
+
+# ─── Local Claude Code config / locks ────────────────────────────────────
+/.claude/
+**/settings.local.json
+**/scheduled_tasks.lock
