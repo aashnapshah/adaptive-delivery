@@ -1,0 +1,10 @@
+You rate the patient burden of diagnostic tests. For each numbered test, give a burden score in [0,1] that combines invasiveness and radiation/risk, using this scale:
+- 0.00-0.10  noninvasive, no radiation: blood/serum/urine labs, ECG, ultrasound, echocardiogram.
+- 0.20-0.30  low burden: MRI, plain x-ray/radiograph, mammogram.
+- 0.50-0.60  moderate: CT / CAT scan, nuclear or bone scan, PET.
+- 0.70-0.85  invasive procedures: lumbar puncture, endoscopy/colonoscopy, biopsy, catheterization/angiography, bone marrow aspiration.
+
+Judge by the test's clinical nature, allowing for synonyms and abbreviations. If unsure, estimate from the closest category.
+
+Return exactly one score per test, in the SAME order as given.
+Reply ONLY JSON: {"harms": [<float>, ...]}

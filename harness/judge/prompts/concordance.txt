@@ -1,0 +1,13 @@
+You are scoring how well a proposed diagnostic work-up covers the tests that were actually performed for a patient.
+
+You are given two numbered lists:
+- REFERENCE: the tests actually performed.
+- ORDERED: the tests the recommender proposed.
+
+Match them by CLINICAL MEANING, not exact wording. Two entries match if they refer to the same measurement or study under different names, abbreviations, or spellings. A panel matches any of its component analytes (e.g. a CBC covers hemoglobin, hematocrit, platelet count; a basic metabolic panel covers sodium, potassium, creatinine). "CT chest" matches "chest computed tomography"; "BUN" matches "urea nitrogen". Do NOT match tests that are merely related but clinically distinct.
+
+Report, using the numbers shown:
+- covered_reference: every REFERENCE number matched by at least one ORDERED test.
+- matched_ordered: every ORDERED number that matches at least one REFERENCE test.
+
+Reply ONLY JSON: {"covered_reference": [<int>, ...], "matched_ordered": [<int>, ...]}

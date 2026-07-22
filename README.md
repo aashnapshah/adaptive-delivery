@@ -16,23 +16,44 @@ orchestration does not buy accuracy**. The two single-call designs are statistic
 ## Layout
 
 ```
-demo/        the pipeline: environment, generation, scoring, interface, policy, evaluation
-  shared/    synthetic MIMIC-shaped toy data so the demo runs fully offline
+harness/     the importable pipeline (see harness/README.md for the stage map)
+  cases/       01  case presentations — MIMIC admissions, NEJM CPC narratives, toy EHR
+  gatekeeper/  02  the sequential-diagnosis environment + the oracle that reveals findings
+  generation/  03  recommender designs (single / maidxo / debate)
+  scoring/     04  appropriateness + harm scoring
+  interface/   05  delivery interface + simulated clinician (alert fatigue)
+  policy/      06  adaptive delivery policy (contextual bandit)
+  evaluation/  07  run the benchmark (record / sweeps / export) AND measure it; recordings + results live here
+  shared/         the LLM backend (Gemini by default) + parsing helpers
+app/         a localhost Flask study/demo UI over the recorded runs
 reports/     the progress report (markdown + styled HTML) and figures
-slides/      a short figure-forward deck (deck.pdf)
+slides/      a short figure-forward deck
 ```
+
+The MIMIC vs CPC distinction is deliberate: **CPC is a static vignette** (an LLM reads the narrative and
+discloses on request), while **MIMIC is a hospital admission** whose real structured labs are revealed
+only when the matching test is ordered (labs-on-order). See `harness/README.md`.
 
 ## Running
 
 ```bash
-pip install -r demo/requirements.txt
-python3 demo/01-environment/demo_environment.py     # offline stub, no setup
-DEMO_LLM_BACKEND=openrouter python3 demo/02-generation/demo_generation.py   # with a real model
+pip install -r requirements.txt
+cp .env.example .env          # add a GEMINI_API_KEY (or leave empty for the offline stub)
+
+python -m harness.cases.toy               # offline: list the toy cases
+python -m harness.scoring.scoring         # offline: a stage demo
+python -m app.app                          # the localhost UI (http://127.0.0.1:5050)
+python -m harness.evaluation.record        # record the benchmark (Gemini by default)
 ```
+
+Backend auto-detects Gemini first, then OpenRouter, Ollama, or an offline stub; force one with
+`DEMO_LLM_BACKEND=gemini|openrouter|ollama|stub`.
 
 ## Data note
 
 **No patient or copyrighted data is included in this repository.** The benchmark runs over MIMIC-IV
 (PhysioNet credentialed, under a Data Use Agreement) and NEJM clinicopathological-conference cases
-(copyrighted); neither may be redistributed. The code runs offline on the synthetic MIMIC-shaped stand-ins
-in `demo/shared/toy_data.py`, and you supply your own credentialed data locally to reproduce the full runs.
+(copyrighted); neither may be redistributed, and both `harness/cases/data/` and the recordings/results
+under `harness/evaluation/` are gitignored. The code runs offline on the synthetic MIMIC-shaped stand-ins in `harness/cases/toy.py`, and
+you supply your own credentialed data locally (`harness/cases/mimic.py --build`) to reproduce the full runs.
+MIMIC cases may only be sent to a **local** model (Ollama) — the recorder refuses a hosted API for them.

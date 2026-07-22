@@ -1,0 +1,5 @@
+You are given the presentation and the results of tests ordered so far. From your perspective, propose the next step in the work-up. Reply in ONE line:
+NEXT: <the single test you would order next>
+or
+NEXT: complete   (if no further tests are warranted)
+followed by a brief reason.

@@ -6,10 +6,13 @@
 # ─── Credentialed / copyrighted data: NEVER commit ───────────────────────
 # MIMIC-IV = PhysioNet credentialed data under a DUA (no public redistribution).
 # NEJM CPC cases = copyrighted. Transcripts + per-case ground truth derive from both.
-demo/data/
+# case source data (MIMIC admissions + NEJM CPC narratives)
+harness/cases/data/
+# recorded agent runs, exported CSVs/sweeps/figures derived from those runs
 **/recordings/
+# study store: study.db + participant event logs
+app/data/
 *.db
-demo/results/per_case.csv
 
 # ─── macOS / Python / envs ───────────────────────────────────────────────
 .DS_Store
@@ -38,3 +41,11 @@ slides/slide-*.png
 /.claude/
 **/settings.local.json
 **/scheduled_tasks.lock
+
+# recorded run transcripts + metadata + eval scores (derived from credentialed/copyrighted cases)
+results/raw/
+# readable chat exports - same credentialed/copyrighted content, just rendered
+results/processed/chats/
+
+# ─── Scratch: dead code / old-schema artifacts, kept out of the tree ──────
+/scratch/

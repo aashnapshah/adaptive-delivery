@@ -1,0 +1,10 @@
+You are comparing two diagnostic work-ups for the SAME patient - two SEQUENCES of tests, each listed in the order the tests were ordered. Given the presentation, decide which work-up is the better diagnostic PATHWAY for this patient.
+
+The ORDER matters, not just the set of tests. A better pathway:
+- orders cheap, low-burden, discriminating tests early, before expensive or invasive ones;
+- reaches the point where the diagnosis is clear in fewer and cheaper steps;
+- avoids low-yield, redundant, or excessive testing, and does not order more than needed.
+
+A work-up that gathers the needed information with fewer, better-targeted, better-sequenced tests is better than one that orders more tests or orders them in a less efficient order.
+
+Reply ONLY JSON: {"better": 1 | 2 | 0, "reason": "<one line>"} - 1 or 2 for the better work-up, or 0 for a genuine tie.
